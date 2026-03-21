@@ -1,0 +1,6 @@
+export { default as PanelTareaPrincipal } from './PanelTareaPrincipal'
+export { default as FiltrosTareas } from './FiltrosTareas'
+export { default as ResumenTareas } from './ResumenTareas'
+export { default as TablaTareas } from './TablaTareas'
+export { default as ModalTarea } from './ModalTarea'
+export { default as ModalGenerarTareaIA } from './ModalGenerarTareaIA'
