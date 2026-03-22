@@ -1,4 +1,4 @@
-import { Boton } from '../../components'
+import { Boton, FlechaSelect } from '../../components'
 import { SELECT, SURFACE, TEXTAREA, TYPO, cx } from '../../constants/colors'
 import type { EstadoTarea, PrioridadTarea } from '../../types'
 
@@ -28,16 +28,6 @@ interface ModalTareaProps {
     campo: K,
     valor: FormularioTarea[K]
   ) => void
-}
-
-function FlechaSelect() {
-  return (
-    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-5">
-      <svg viewBox="0 0 10 6" aria-hidden="true" className="h-3 w-3 fill-[#312D2A]">
-        <path d="M0.8 0.6h8.4L5 5.4 0.8 0.6Z" />
-      </svg>
-    </span>
-  )
 }
 
 export default function ModalTarea({

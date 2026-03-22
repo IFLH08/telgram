@@ -23,10 +23,22 @@ import {
   eliminarTarea,
   obtenerTareas,
 } from '../services/tasks.service'
-import type { EstadoTarea, PrioridadTarea, Tarea } from '../types'
-
-type EstadoFiltro = 'todos' | EstadoTarea
-type PrioridadFiltro = 'todas' | PrioridadTarea
+import { generarContenidoIA } from '../services/ia.service'
+import type {
+  EstadoFiltro,
+  EstadoTarea,
+  PrioridadFiltro,
+  PrioridadTarea,
+  Tarea,
+} from '../types'
+import {
+  formatearSegundos,
+  obtenerTextoEstado,
+  obtenerTextoPrioridad,
+  obtenerVarianteEstado,
+  obtenerVariantePrioridad,
+  redondearHoras,
+} from '../utils/taskFormatters'
 
 interface FormularioTarea {
   titulo: string
@@ -68,76 +80,6 @@ const formularioIAInicial: FormularioGeneracionIA = {
   prioridadObjetivo: 'media',
 }
 
-function obtenerTextoEstado(estado: EstadoTarea) {
-  switch (estado) {
-    case 'pendiente':
-      return 'Pendiente'
-    case 'en_progreso':
-      return 'En progreso'
-    case 'completada':
-      return 'Completada'
-    case 'bloqueada':
-      return 'Bloqueada'
-    default:
-      return estado
-  }
-}
-
-function obtenerVarianteEstado(estado: EstadoTarea) {
-  switch (estado) {
-    case 'pendiente':
-      return 'warning' as const
-    case 'en_progreso':
-      return 'info' as const
-    case 'completada':
-      return 'success' as const
-    case 'bloqueada':
-      return 'danger' as const
-    default:
-      return 'neutral' as const
-  }
-}
-
-function obtenerTextoPrioridad(prioridad: PrioridadTarea) {
-  switch (prioridad) {
-    case 'alta':
-      return 'Alta'
-    case 'media':
-      return 'Media'
-    case 'baja':
-      return 'Baja'
-    default:
-      return prioridad
-  }
-}
-
-function obtenerVariantePrioridad(prioridad: PrioridadTarea) {
-  switch (prioridad) {
-    case 'alta':
-      return 'danger' as const
-    case 'media':
-      return 'warning' as const
-    case 'baja':
-      return 'info' as const
-    default:
-      return 'neutral' as const
-  }
-}
-
-function formatearSegundos(segundos: number) {
-  const horas = Math.floor(segundos / 3600)
-  const minutos = Math.floor((segundos % 3600) / 60)
-  const restantes = segundos % 60
-
-  return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(
-    restantes,
-  ).padStart(2, '0')}`
-}
-
-function redondearHoras(valor: number) {
-  return Math.round(valor * 100) / 100
-}
-
 function capitalizar(texto: string) {
   if (!texto.trim()) return ''
   return texto.trim().charAt(0).toUpperCase() + texto.trim().slice(1)
@@ -149,63 +91,156 @@ function generarFechaLimiteSugerida() {
   return fecha.toISOString().split('T')[0]
 }
 
-function generarBorradorTareaIA(formularioIA: FormularioGeneracionIA): FormularioTarea {
-  const idea = formularioIA.ideaGeneral.trim()
-  const contexto = formularioIA.contexto.trim()
-  const proyecto = formularioIA.proyectoNombre.trim()
-  const responsable = formularioIA.responsableNombre.trim()
-
-  const tituloBase = capitalizar(idea) || 'Nueva tarea generada con IA'
-  const subtituloBase = proyecto
-    ? `Tarea propuesta para ${proyecto}`
-    : 'Tarea propuesta automáticamente'
-
-  const descripcionPartes = [
-    `Objetivo principal: ${idea || 'Definir alcance de la tarea.'}`,
-    contexto ? `Contexto adicional: ${contexto}` : '',
-    proyecto ? `Proyecto relacionado: ${proyecto}` : '',
-    responsable ? `Responsable sugerido: ${responsable}` : '',
-    'Entregable esperado: actividad lista para ejecutarse, revisar y registrar en el portal.',
-  ].filter(Boolean)
-
-  let categoria = 'General'
+function detectarCategoria(idea: string, contenido: string) {
+  const texto = `${idea} ${contenido}`.toLowerCase()
 
   if (
-    idea.toLowerCase().includes('frontend') ||
-    idea.toLowerCase().includes('interfaz') ||
-    idea.toLowerCase().includes('pantalla') ||
-    idea.toLowerCase().includes('ui')
+    texto.includes('frontend') ||
+    texto.includes('interfaz') ||
+    texto.includes('pantalla') ||
+    texto.includes('ui')
   ) {
-    categoria = 'Frontend'
-  } else if (
-    idea.toLowerCase().includes('backend') ||
-    idea.toLowerCase().includes('api') ||
-    idea.toLowerCase().includes('servicio')
-  ) {
-    categoria = 'Backend'
-  } else if (
-    idea.toLowerCase().includes('reporte') ||
-    idea.toLowerCase().includes('dashboard') ||
-    idea.toLowerCase().includes('métrica')
-  ) {
-    categoria = 'Reportes'
-  } else if (
-    idea.toLowerCase().includes('bug') ||
-    idea.toLowerCase().includes('error') ||
-    idea.toLowerCase().includes('ajuste')
-  ) {
-    categoria = 'Mantenimiento'
+    return 'Frontend'
   }
 
+  if (texto.includes('backend') || texto.includes('api') || texto.includes('servicio')) {
+    return 'Backend'
+  }
+
+  if (
+    texto.includes('reporte') ||
+    texto.includes('dashboard') ||
+    texto.includes('métrica') ||
+    texto.includes('analítica')
+  ) {
+    return 'Reportes'
+  }
+
+  if (texto.includes('bug') || texto.includes('error') || texto.includes('ajuste')) {
+    return 'Mantenimiento'
+  }
+
+  return 'General'
+}
+
+function limpiarMarkdownBasico(texto: string) {
+  return texto
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/`(.*?)`/g, '$1')
+    .replace(/^#+\s*/gm, '')
+    .replace(/^\s*[-*]\s+/gm, '• ')
+    .replace(/^\s*\d+\.\s+/gm, '• ')
+    .trim()
+}
+
+function construirPromptGeneracion(formularioIA: FormularioGeneracionIA) {
+  const proyecto = formularioIA.proyectoNombre.trim() || 'Sin proyecto definido'
+  const responsable = formularioIA.responsableNombre.trim() || 'Sin responsable sugerido'
+
+  return `
+Genera un borrador profesional de tarea para un portal de gestión de tareas llamado DevTask.
+
+Responde únicamente en este formato exacto:
+
+TITULO: ...
+SUBTITULO: ...
+DESCRIPCION:
+...
+CATEGORIA: ...
+
+Reglas:
+- todo en español
+- no uses markdown
+- el título debe ser corto y claro
+- el subtítulo debe sonar ejecutivo y útil
+- la descripción debe estar lista para pegarse en un textarea del sistema
+- la categoría debe ser una sola entre: Frontend, Backend, Reportes, Mantenimiento, General
+- no agregues campos extra
+
+Contexto de entrada:
+Idea general: ${formularioIA.ideaGeneral.trim()}
+Contexto adicional: ${formularioIA.contexto.trim() || 'Sin contexto adicional'}
+Proyecto: ${proyecto}
+Responsable sugerido: ${responsable}
+Prioridad objetivo: ${formularioIA.prioridadObjetivo}
+`.trim()
+}
+
+function extraerSeccion(texto: string, etiqueta: string, siguienteEtiquetas: string[]) {
+  const inicioRegex = new RegExp(`${etiqueta}:`, 'i')
+  const inicioMatch = texto.match(inicioRegex)
+
+  if (!inicioMatch || inicioMatch.index === undefined) {
+    return ''
+  }
+
+  const inicio = inicioMatch.index + inicioMatch[0].length
+  const resto = texto.slice(inicio)
+
+  let fin = resto.length
+
+  for (const siguienteEtiqueta of siguienteEtiquetas) {
+    const regex = new RegExp(`\\n${siguienteEtiqueta}:`, 'i')
+    const match = resto.match(regex)
+
+    if (match && match.index !== undefined) {
+      fin = Math.min(fin, match.index)
+    }
+  }
+
+  return resto.slice(0, fin).trim()
+}
+
+function convertirRespuestaIABorrador(
+  respuesta: string,
+  formularioIA: FormularioGeneracionIA,
+): FormularioTarea {
+  const texto = limpiarMarkdownBasico(respuesta)
+
+  const titulo =
+    extraerSeccion(texto, 'TITULO', ['SUBTITULO', 'DESCRIPCION', 'CATEGORIA']) ||
+    capitalizar(formularioIA.ideaGeneral.trim()) ||
+    'Nueva tarea generada con IA'
+
+  const subtitulo =
+    extraerSeccion(texto, 'SUBTITULO', ['DESCRIPCION', 'CATEGORIA']) ||
+    (formularioIA.proyectoNombre.trim()
+      ? `Tarea propuesta para ${formularioIA.proyectoNombre.trim()}`
+      : 'Tarea propuesta automáticamente')
+
+  const descripcion =
+    extraerSeccion(texto, 'DESCRIPCION', ['CATEGORIA']) ||
+    [
+      `Objetivo principal: ${formularioIA.ideaGeneral.trim() || 'Definir alcance de la tarea.'}`,
+      formularioIA.contexto.trim()
+        ? `Contexto adicional: ${formularioIA.contexto.trim()}`
+        : '',
+      formularioIA.proyectoNombre.trim()
+        ? `Proyecto relacionado: ${formularioIA.proyectoNombre.trim()}`
+        : '',
+      formularioIA.responsableNombre.trim()
+        ? `Responsable sugerido: ${formularioIA.responsableNombre.trim()}`
+        : '',
+      'Entregable esperado: actividad lista para ejecutarse, revisar y registrar en el portal.',
+    ]
+      .filter(Boolean)
+      .join('\n\n')
+
+  const categoriaRespuesta = extraerSeccion(texto, 'CATEGORIA', [])
+  const categoria = categoriaRespuesta
+    ? capitalizar(categoriaRespuesta)
+    : detectarCategoria(formularioIA.ideaGeneral, descripcion)
+
   return {
-    titulo: tituloBase,
-    subtitulo: subtituloBase,
-    descripcion: descripcionPartes.join('\n\n'),
+    titulo,
+    subtitulo,
+    descripcion,
     estado: 'pendiente',
     prioridad: formularioIA.prioridadObjetivo,
     categoria,
-    responsableNombre: responsable,
-    proyectoNombre: proyecto,
+    responsableNombre: formularioIA.responsableNombre.trim(),
+    proyectoNombre: formularioIA.proyectoNombre.trim(),
     fechaLimite: generarFechaLimiteSugerida(),
   }
 }
@@ -315,52 +350,46 @@ export default function Tareas() {
   const categoriasDisponibles = useMemo(() => {
     const categoriasBase = ['Frontend', 'Backend', 'Reportes', 'Mantenimiento', 'General']
 
-    const categoriasExistentes = tareasVisibles
+    const categoriasDinamicas = tareasVisibles
       .map((tarea) => tarea.categoria)
       .filter((valor): valor is string => Boolean(valor))
 
-    return Array.from(new Set([...categoriasBase, ...categoriasExistentes]))
+    return Array.from(new Set([...categoriasBase, ...categoriasDinamicas]))
   }, [tareasVisibles])
 
   const opcionesBusquedaTareas = useMemo(() => {
-    return Array.from(
-      new Set(
-        tareasVisibles
-          .map((tarea) => tarea.titulo?.trim())
-          .filter((valor): valor is string => Boolean(valor)),
-      ),
-    )
+    return Array.from(new Set(tareasVisibles.map((tarea) => tarea.titulo).filter(Boolean)))
   }, [tareasVisibles])
 
   const opcionesBusquedaResponsables = useMemo(() => {
     return Array.from(
       new Set(
         tareasVisibles
-          .map((tarea) => tarea.responsableNombre?.trim())
+          .map((tarea) => tarea.responsableNombre)
           .filter((valor): valor is string => Boolean(valor)),
       ),
     )
   }, [tareasVisibles])
 
   const tareasFiltradas = useMemo(() => {
-    return tareasVisibles.filter((tarea) => {
-      const terminoTarea = busquedaTarea.toLowerCase()
-      const terminoResponsable = busquedaResponsable.toLowerCase()
+    const terminoTarea = busquedaTarea.trim().toLowerCase()
+    const terminoResponsable = busquedaResponsable.trim().toLowerCase()
 
+    return tareasVisibles.filter((tarea) => {
       const coincideBusquedaTarea =
         !terminoTarea ||
         tarea.titulo.toLowerCase().includes(terminoTarea) ||
-        (tarea.subtitulo || '').toLowerCase().includes(terminoTarea)
+        (tarea.subtitulo || '').toLowerCase().includes(terminoTarea) ||
+        (tarea.descripcion || '').toLowerCase().includes(terminoTarea) ||
+        (tarea.proyectoNombre || '').toLowerCase().includes(terminoTarea)
 
       const coincideBusquedaResponsable =
         !terminoResponsable ||
         (tarea.responsableNombre || '').toLowerCase().includes(terminoResponsable)
 
       const coincideEstado = filtroEstado === 'todos' || tarea.estado === filtroEstado
-
       const coincidePrioridad =
         filtroPrioridad === 'todas' || tarea.prioridad === filtroPrioridad
-
       const coincideProyecto =
         filtroProyecto === 'todos' || tarea.proyectoNombre === filtroProyecto
 
@@ -572,7 +601,9 @@ export default function Tareas() {
       setGenerandoIA(true)
       setMensaje(null)
 
-      const borrador = generarBorradorTareaIA(formularioIA)
+      const prompt = construirPromptGeneracion(formularioIA)
+      const respuesta = await generarContenidoIA(prompt)
+      const borrador = convertirRespuestaIABorrador(respuesta.texto, formularioIA)
 
       setModoFormulario('crear')
       setTareaSeleccionada(null)
@@ -661,9 +692,9 @@ export default function Tareas() {
         prev.map((t) =>
           t.id === tareaActiva.id
             ? {
-                ...(actualizada || t),
-                horasReales: nuevasHorasReales,
-              }
+              ...(actualizada || t),
+              horasReales: nuevasHorasReales,
+            }
             : t,
         ),
       )
@@ -688,29 +719,17 @@ export default function Tareas() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            {puedeCrear && (
-              <>
-                <Boton variante="secundario" onClick={abrirModalGenerarIA}>
-                  Generar tarea con IA
-                </Boton>
-                <Boton onClick={abrirModalCrear}>Nueva tarea</Boton>
-              </>
-            )}
-          </div>
+          {puedeCrear ? (
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Boton variante="secundario" onClick={abrirModalGenerarIA}>
+                Generar con IA
+              </Boton>
+              <Boton onClick={abrirModalCrear}>Nueva tarea</Boton>
+            </div>
+          ) : null}
         </div>
 
-        {!puedeCrear && (
-          <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-[#312D2A] shadow-sm">
-            Vista ajustada a tu rol actual. Puedes trabajar solo con las tareas permitidas.
-          </div>
-        )}
-
-        {mensaje && (
-          <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-[#312D2A] shadow-sm">
-            {mensaje}
-          </div>
-        )}
+        {mensaje ? <p className={TYPO.BODY_MUTED}>{mensaje}</p> : null}
 
         <PanelTareaPrincipal
           busquedaTareaActiva={busquedaTareaActiva}

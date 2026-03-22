@@ -18,10 +18,20 @@ import {
   puedeVerReportesGlobales,
 } from '../permissions'
 import { obtenerTareas } from '../services/tasks.service'
-import type { EstadoTarea, PrioridadTarea, Tarea } from '../types'
-
-type EstadoFiltro = 'todos' | EstadoTarea
-type PrioridadFiltro = 'todas' | PrioridadTarea
+import type {
+  EstadoFiltro,
+  EstadoTarea,
+  PrioridadFiltro,
+  PrioridadTarea,
+  Tarea,
+} from '../types'
+import {
+  obtenerTextoEstado,
+  obtenerTextoPrioridad,
+  obtenerVarianteEstado,
+  obtenerVariantePrioridad,
+  redondearHoras,
+} from '../utils/taskFormatters'
 
 interface ReporteGenerado {
   titulo: string
@@ -38,66 +48,6 @@ interface ReporteGenerado {
   observaciones: string[]
 }
 
-function obtenerTextoEstado(estado: EstadoTarea) {
-  switch (estado) {
-    case 'pendiente':
-      return 'Pendiente'
-    case 'en_progreso':
-      return 'En progreso'
-    case 'completada':
-      return 'Completada'
-    case 'bloqueada':
-      return 'Bloqueada'
-    default:
-      return estado
-  }
-}
-
-function obtenerVarianteEstado(estado: EstadoTarea) {
-  switch (estado) {
-    case 'pendiente':
-      return 'warning' as const
-    case 'en_progreso':
-      return 'info' as const
-    case 'completada':
-      return 'success' as const
-    case 'bloqueada':
-      return 'danger' as const
-    default:
-      return 'neutral' as const
-  }
-}
-
-function obtenerTextoPrioridad(prioridad: PrioridadTarea) {
-  switch (prioridad) {
-    case 'alta':
-      return 'Alta'
-    case 'media':
-      return 'Media'
-    case 'baja':
-      return 'Baja'
-    default:
-      return prioridad
-  }
-}
-
-function obtenerVariantePrioridad(prioridad: PrioridadTarea) {
-  switch (prioridad) {
-    case 'alta':
-      return 'danger' as const
-    case 'media':
-      return 'warning' as const
-    case 'baja':
-      return 'info' as const
-    default:
-      return 'neutral' as const
-  }
-}
-
-function redondearHoras(valor: number) {
-  return Math.round(valor * 100) / 100
-}
-
 function calcularPorcentaje(parte: number, total: number) {
   if (total <= 0) return 0
   return Math.round((parte / total) * 100)
@@ -111,12 +61,10 @@ function generarReporteTarea(tarea: Tarea): ReporteGenerado {
   if (horasEstimadas > 0 && horasReales > 0) {
     const porcentaje = Math.round((horasReales / horasEstimadas) * 100)
 
-    if (porcentaje <= 90) {
-      eficienciaTiempo = `Se ejecutó por debajo del tiempo estimado (${porcentaje}%).`
-    } else if (porcentaje <= 110) {
-      eficienciaTiempo = `Se ejecutó dentro del rango esperado (${porcentaje}%).`
+    if (porcentaje <= 100) {
+      eficienciaTiempo = `Dentro de lo estimado (${porcentaje}%)`
     } else {
-      eficienciaTiempo = `Se ejecutó por encima del tiempo estimado (${porcentaje}%).`
+      eficienciaTiempo = `Por encima de lo estimado (${porcentaje}%)`
     }
   }
 
@@ -440,7 +388,7 @@ export default function Reportes() {
   const abrirReporte = (tarea: Tarea) => {
     setTareaParaReporte(tarea)
     setModalReporteAbierto(true)
-    setMensaje(null)
+    setMensaje(`Reporte listo para: ${tarea.titulo}`)
   }
 
   const cerrarReporte = () => {

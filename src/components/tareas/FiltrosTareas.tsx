@@ -1,9 +1,6 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, FlechaSelect } from '../../components'
 import { SELECT, cx } from '../../constants/colors'
-import type { EstadoTarea, PrioridadTarea } from '../../types'
-
-type EstadoFiltro = 'todos' | EstadoTarea
-type PrioridadFiltro = 'todas' | PrioridadTarea
+import type { EstadoFiltro, PrioridadFiltro } from '../../types'
 
 interface FiltrosTareasProps {
   busquedaTarea: string
@@ -19,16 +16,6 @@ interface FiltrosTareasProps {
   proyectos: string[]
   opcionesBusquedaTareas: string[]
   opcionesBusquedaResponsables: string[]
-}
-
-function FlechaSelect() {
-  return (
-    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-5">
-      <svg viewBox="0 0 10 6" aria-hidden="true" className="h-3 w-3 fill-[#312D2A]">
-        <path d="M0.8 0.6h8.4L5 5.4 0.8 0.6Z" />
-      </svg>
-    </span>
-  )
 }
 
 export default function FiltrosTareas({

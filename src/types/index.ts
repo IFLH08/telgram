@@ -113,3 +113,6 @@ export interface FiltrosTareas extends ParametrosPaginacion {
   proyectoId?: ID
   categoria?: string
 }
+
+export type EstadoFiltro = 'todos' | EstadoTarea
+export type PrioridadFiltro = 'todas' | PrioridadTarea
