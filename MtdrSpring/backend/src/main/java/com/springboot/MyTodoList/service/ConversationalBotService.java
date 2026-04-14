@@ -203,20 +203,23 @@ public class ConversationalBotService {
         try {
             Long id = Long.parseLong(requestText.split("-")[0]);
             Tarea t = tareaRepository.findById(id).orElse(null);
-            if (t != null) {
-                EstadoTarea estado = estadoTareaRepository.findByNombreEstado("IN PROGRESS");
-                if (estado == null) {
-                    estado = new EstadoTarea();
-                    estado.setNombreEstado("IN PROGRESS");
-                    estado = estadoTareaRepository.save(estado);
-                }
-                t.setEstado(estado);
-                tareaRepository.save(t);
-                BotHelper.sendMessageToTelegram(chatId, "🚀 Tarea " + id + " marcada como INICIADA.", telegramClient, null);
-                handleListAllTareas(chatId);
+            if (t == null) {
+                BotHelper.sendMessageToTelegram(chatId, "⚠️ No se encontró la tarea con ID " + id + ".", telegramClient, null);
+                return;
             }
+            EstadoTarea estado = estadoTareaRepository.findByNombreEstado("IN PROGRESS");
+            if (estado == null) {
+                estado = new EstadoTarea();
+                estado.setNombreEstado("IN PROGRESS");
+                estado = estadoTareaRepository.save(estado);
+            }
+            t.setEstado(estado);
+            tareaRepository.save(t);
+            BotHelper.sendMessageToTelegram(chatId, "🚀 Tarea " + id + " marcada como INICIADA.", telegramClient, null);
+            handleListAllTareas(chatId);
         } catch (Exception e) {
-             BotHelper.sendMessageToTelegram(chatId, "Error al iniciar tarea.", telegramClient, null);
+            e.printStackTrace();
+            BotHelper.sendMessageToTelegram(chatId, "❌ Error al iniciar tarea: " + e.getMessage(), telegramClient, null);
         }
     }
 
@@ -224,22 +227,25 @@ public class ConversationalBotService {
         try {
             Long id = Long.parseLong(requestText.split("-")[0]);
             Tarea t = tareaRepository.findById(id).orElse(null);
-            if (t != null) {
-                // Falta requerir las horas reales, por el momento pondremos las estimadas
-                EstadoTarea estado = estadoTareaRepository.findByNombreEstado("COMPLETED");
-                if (estado == null) {
-                    estado = new EstadoTarea();
-                    estado.setNombreEstado("COMPLETED");
-                    estado = estadoTareaRepository.save(estado);
-                }
-                t.setEstado(estado);
-                t.setHorasReales(t.getHorasEstimadas()); // Temporal, el requerimiento pide interactuar y pedirlas.
-                tareaRepository.save(t);
-                BotHelper.sendMessageToTelegram(chatId, "✅ Tarea " + id + " marcada como TERMINADA.", telegramClient, null);
-                handleListAllTareas(chatId);
+            if (t == null) {
+                BotHelper.sendMessageToTelegram(chatId, "⚠️ No se encontró la tarea con ID " + id + ".", telegramClient, null);
+                return;
             }
+            // Falta requerir las horas reales, por el momento pondremos las estimadas
+            EstadoTarea estado = estadoTareaRepository.findByNombreEstado("COMPLETED");
+            if (estado == null) {
+                estado = new EstadoTarea();
+                estado.setNombreEstado("COMPLETED");
+                estado = estadoTareaRepository.save(estado);
+            }
+            t.setEstado(estado);
+            t.setHorasReales(t.getHorasEstimadas()); // Temporal, el requerimiento pide interactuar y pedirlas.
+            tareaRepository.save(t);
+            BotHelper.sendMessageToTelegram(chatId, "✅ Tarea " + id + " marcada como TERMINADA.", telegramClient, null);
+            handleListAllTareas(chatId);
         } catch (Exception e) {
-             BotHelper.sendMessageToTelegram(chatId, "Error al terminar tarea.", telegramClient, null);
+            e.printStackTrace();
+            BotHelper.sendMessageToTelegram(chatId, "❌ Error al terminar tarea: " + e.getMessage(), telegramClient, null);
         }
     }
 

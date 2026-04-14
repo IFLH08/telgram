@@ -36,7 +36,7 @@ public class Tarea {
     private EstadoTarea estado;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_SPRINT", nullable = false)
+    @JoinColumn(name = "ID_SPRINT", nullable = true)
     private Sprint sprint;
 
     @ManyToOne(fetch = FetchType.EAGER)
