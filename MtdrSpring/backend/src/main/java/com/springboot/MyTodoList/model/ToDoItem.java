@@ -1,8 +1,8 @@
 package com.springboot.MyTodoList.model;
 
-
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /*
     representation of the TODOITEM table that exists already
@@ -10,6 +10,7 @@ import java.time.OffsetDateTime;
  */
 @Entity
 @Table(name = "TODOITEM")
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class ToDoItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,9 +21,11 @@ public class ToDoItem {
     OffsetDateTime creation_ts;
     @Column(name = "done")
     boolean done;
-    public ToDoItem(){
+
+    public ToDoItem() {
 
     }
+
     public ToDoItem(int ID, String description, OffsetDateTime creation_ts, boolean done) {
         this.ID = ID;
         this.description = description;

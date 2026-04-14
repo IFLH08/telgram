@@ -25,5 +25,6 @@
     "browserslist": [
         "last 5 versions"
     ],
-    "homepage": "."
+    "homepage": ".",
+    "proxy": "http://localhost:8080"
 }

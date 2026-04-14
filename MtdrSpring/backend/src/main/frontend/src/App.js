@@ -186,6 +186,11 @@ function App() {
     return (
       <div className="App">
         <h1>MY TODO LIST</h1>
+        {/* YouTube video section added below the main title */}
+        <div className="youtube-section">
+          <h2>Video de YouTube</h2>
+          <iframe width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+        </div>
         <NewItem addItem={addItem} isInserting={isInserting}/>
         { error &&
           <p>Error: {error.message}</p>
