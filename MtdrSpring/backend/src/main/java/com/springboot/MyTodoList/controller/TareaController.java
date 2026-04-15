@@ -21,6 +21,12 @@ public class TareaController {
         return tareaRepository.findAll();
     }
 
+    @GetMapping("/sprint-actual")
+    public ResponseEntity<List<com.springboot.MyTodoList.dto.TareaSprintDTO>> getTareasSprintActual() {
+        List<com.springboot.MyTodoList.dto.TareaSprintDTO> tareas = tareaRepository.findTareasSprintActual();
+        return ResponseEntity.ok(tareas);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Tarea> getById(@PathVariable Long id) {
         return tareaRepository.findById(id)
