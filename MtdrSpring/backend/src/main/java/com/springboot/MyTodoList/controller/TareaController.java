@@ -27,6 +27,12 @@ public class TareaController {
         return ResponseEntity.ok(tareas);
     }
 
+    @GetMapping("/reporte/kpi-avances")
+    public ResponseEntity<List<com.springboot.MyTodoList.dto.SprintKpiResponse>> getKpiAvances() {
+        List<com.springboot.MyTodoList.dto.SprintKpiResponse> kpi = tareaRepository.calcularKpiSprints();
+        return ResponseEntity.ok(kpi);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Tarea> getById(@PathVariable Long id) {
         return tareaRepository.findById(id)
