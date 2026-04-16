@@ -25,7 +25,7 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
     List<TareaSprintDTO> findTareasSprintActual();
 
     // Punto 6: Calcular KPI de porcentaje de tareas completadas por cada Sprint
-    @Query("SELECT new com.springboot.MyTodoList.dto.SprintKpiResponse(s.idSprint, s.nombre, COUNT(t), SUM(CASE WHEN e.nombreEstado = 'Completada' OR e.nombreEstado = 'DONE' THEN 1L ELSE 0L END)) " +
+    @Query("SELECT new com.springboot.MyTodoList.dto.SprintKpiResponse(s.idSprint, s.nombre, COUNT(t), SUM(CASE WHEN UPPER(e.nombreEstado) = 'COMPLETADA' OR UPPER(e.nombreEstado) = 'DONE' OR UPPER(e.nombreEstado) = 'COMPLETED' THEN 1L ELSE 0L END)) " +
            "FROM Sprint s " +
            "LEFT JOIN Tarea t ON t.sprint.idSprint = s.idSprint " +
            "LEFT JOIN t.estado e " +
