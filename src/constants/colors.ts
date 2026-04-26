@@ -1,147 +1,147 @@
-  export const PALETTE = {
+export const PALETTE = {
   oracle: {
-    50: '#F9EEEB',
-    100: '#F2D5CE',
-    200: '#E7B5A9',
-    300: '#DB9483',
-    400: '#CF735E',
-    500: '#C74634', // Oracle red principal
-    600: '#A93B2C',
-    700: '#8A3024',
-    800: '#6C251C',
-    900: '#4D1A14',
+    50: '#EEF3EF',
+    100: '#D8E3DA',
+    200: '#B1C6B6',
+    300: '#7FA081',
+    400: '#5D7B61',
+    500: '#33553C',
+    600: '#2B4732',
+    700: '#213626',
+    800: '#18271C',
+    900: '#111B13',
   },
 
   bark: {
-    50: '#F6F5F5',
-    100: '#E7E5E4',
-    200: '#D6D3D1',
-    300: '#B8B3AF',
-    400: '#8F8883',
-    500: '#5C5652',
-    600: '#45403D',
-    700: '#312D2A', // Oracle bark principal
-    800: '#262220',
-    900: '#1A1716',
+    50: '#F7F5F2',
+    100: '#ECE7E1',
+    200: '#DDD7D0',
+    300: '#C9C1B8',
+    400: '#AAA298',
+    500: '#857E76',
+    600: '#66635E',
+    700: '#4D4A45',
+    800: '#2B2A27',
+    900: '#161513',
   },
 
   neutral: {
     0: '#FFFFFF',
-    50: '#FAFAFA',
-    100: '#F5F5F5',
-    200: '#E5E7EB',
-    300: '#D1D5DB',
-    400: '#9CA3AF',
-    500: '#6B7280',
-    600: '#4B5563',
-    700: '#374151',
-    800: '#1F2937',
-    900: '#111827',
+    50: '#FBFAF8',
+    100: '#F5F2EE',
+    200: '#E2DDD6',
+    300: '#D3CDC5',
+    400: '#B5AEA6',
+    500: '#8B857E',
+    600: '#6C6760',
+    700: '#514D47',
+    800: '#302E2A',
+    900: '#161513',
   },
 
   success: {
-    50: '#ECFDF3',
-    100: '#D1FADF',
-    500: '#12B76A',
-    600: '#039855',
-    700: '#027A48',
+    50: '#EEF3EF',
+    100: '#D8E3DA',
+    500: '#33553C',
+    600: '#2B4732',
+    700: '#213626',
   },
 
   warning: {
-    50: '#FFFAEB',
-    100: '#FEF0C7',
-    500: '#F79009',
-    600: '#DC6803',
-    700: '#B54708',
+    50: '#FFF7DE',
+    100: '#F7E1A0',
+    500: '#F0CC71',
+    600: '#CAA94B',
+    700: '#8C7126',
   },
 
   danger: {
     50: '#FEF3F2',
-    100: '#FEE4E2',
-    500: '#F04438',
-    600: '#D92D20',
-    700: '#B42318',
+    100: '#FAD8D3',
+    500: '#C15B52',
+    600: '#A24A43',
+    700: '#7D3833',
   },
 
   info: {
-    50: '#EFF8FF',
-    100: '#D1E9FF',
-    500: '#2E90FA',
-    600: '#1570EF',
-    700: '#175CD3',
+    50: '#EAF5F9',
+    100: '#C9E4EE',
+    500: '#006B8F',
+    600: '#005E7D',
+    700: '#00475E',
   },
 } as const
 
 export const TOKENS = {
   text: {
-    primary: 'text-[#312D2A]',
-    secondary: 'text-gray-600',
-    muted: 'text-gray-400',
+    primary: 'text-[#161513]',
+    secondary: 'text-[#66635E]',
+    muted: 'text-[#8B857E]',
     inverse: 'text-white',
-    brand: 'text-[#C74634]',
-    success: 'text-[#027A48]',
-    warning: 'text-[#B54708]',
-    danger: 'text-[#B42318]',
-    info: 'text-[#175CD3]',
+    brand: 'text-[#33553C]',
+    success: 'text-[#213626]',
+    warning: 'text-[#8C7126]',
+    danger: 'text-[#7D3833]',
+    info: 'text-[#00475E]',
   },
 
   bg: {
     page: 'bg-white',
-    pageSubtle: 'bg-gray-50',
+    pageSubtle: 'bg-[#FBFAF8]',
     surface: 'bg-white',
-    surfaceSubtle: 'bg-gray-50',
-    surfaceMuted: 'bg-gray-100',
-    brand: 'bg-[#C74634]',
-    brandHover: 'hover:bg-[#A93B2C]',
-    brandSoft: 'bg-[#F9EEEB]',
-    dark: 'bg-[#312D2A]',
-    darkHover: 'hover:bg-[#262220]',
-    neutral: 'bg-[#CBCECE]',
-    success: 'bg-[#12B76A]',
-    successSoft: 'bg-[#ECFDF3]',
-    warning: 'bg-[#F79009]',
-    warningSoft: 'bg-[#FFFAEB]',
-    danger: 'bg-[#F04438]',
+    surfaceSubtle: 'bg-[#FBFAF8]',
+    surfaceMuted: 'bg-[#F5F2EE]',
+    brand: 'bg-[#33553C]',
+    brandHover: 'hover:bg-[#2B4732]',
+    brandSoft: 'bg-[#EEF3EF]',
+    dark: 'bg-[#161513]',
+    darkHover: 'hover:bg-[#2B2A27]',
+    neutral: 'bg-[#F5F2EE]',
+    success: 'bg-[#33553C]',
+    successSoft: 'bg-[#EEF3EF]',
+    warning: 'bg-[#F0CC71]',
+    warningSoft: 'bg-[#FFF7DE]',
+    danger: 'bg-[#C15B52]',
     dangerSoft: 'bg-[#FEF3F2]',
-    info: 'bg-[#2E90FA]',
-    infoSoft: 'bg-[#EFF8FF]',
+    info: 'bg-[#006B8F]',
+    infoSoft: 'bg-[#EAF5F9]',
   },
 
   border: {
-    subtle: 'border-gray-200',
-    base: 'border-gray-300',
-    strong: 'border-gray-400',
-    brand: 'border-[#C74634]',
-    brandSoft: 'border-[#F2D5CE]',
-    dark: 'border-[#312D2A]',
-    success: 'border-[#12B76A]',
-    warning: 'border-[#F79009]',
-    danger: 'border-[#F04438]',
-    info: 'border-[#2E90FA]',
+    subtle: 'border-[#E2DDD6]',
+    base: 'border-[#D3CDC5]',
+    strong: 'border-[#B5AEA6]',
+    brand: 'border-[#33553C]',
+    brandSoft: 'border-[#D8E3DA]',
+    dark: 'border-[#161513]',
+    success: 'border-[#33553C]',
+    warning: 'border-[#F0CC71]',
+    danger: 'border-[#C15B52]',
+    info: 'border-[#006B8F]',
   },
 
   ring: {
-    brand: 'focus:ring-4 focus:ring-[#F2D5CE]',
-    neutral: 'focus:ring-4 focus:ring-gray-100',
-    success: 'focus:ring-4 focus:ring-[#D1FADF]',
-    warning: 'focus:ring-4 focus:ring-[#FEF0C7]',
-    danger: 'focus:ring-4 focus:ring-[#FEE4E2]',
-    info: 'focus:ring-4 focus:ring-[#D1E9FF]',
+    brand: 'focus:ring-2 focus:ring-[#D8E3DA]',
+    neutral: 'focus:ring-2 focus:ring-[#ECE7E1]',
+    success: 'focus:ring-2 focus:ring-[#D8E3DA]',
+    warning: 'focus:ring-2 focus:ring-[#F7E1A0]',
+    danger: 'focus:ring-2 focus:ring-[#FAD8D3]',
+    info: 'focus:ring-2 focus:ring-[#C9E4EE]',
   },
 
   focus: {
-    brand: 'focus:border-[#C74634] focus:ring-4 focus:ring-[#F2D5CE]',
-    neutral: 'focus:border-gray-300 focus:ring-4 focus:ring-gray-100',
-    success: 'focus:border-[#12B76A] focus:ring-4 focus:ring-[#D1FADF]',
-    warning: 'focus:border-[#F79009] focus:ring-4 focus:ring-[#FEF0C7]',
-    danger: 'focus:border-[#F04438] focus:ring-4 focus:ring-[#FEE4E2]',
-    info: 'focus:border-[#2E90FA] focus:ring-4 focus:ring-[#D1E9FF]',
+    brand: 'focus:border-[#33553C] focus:ring-2 focus:ring-[#D8E3DA]',
+    neutral: 'focus:border-[#B5AEA6] focus:ring-2 focus:ring-[#ECE7E1]',
+    success: 'focus:border-[#33553C] focus:ring-2 focus:ring-[#D8E3DA]',
+    warning: 'focus:border-[#F0CC71] focus:ring-2 focus:ring-[#F7E1A0]',
+    danger: 'focus:border-[#C15B52] focus:ring-2 focus:ring-[#FAD8D3]',
+    info: 'focus:border-[#006B8F] focus:ring-2 focus:ring-[#C9E4EE]',
   },
 } as const
 
 export const LAYOUT = {
-  PAGE_CONTAINER: 'mx-auto max-w-7xl px-4 py-8',
-  PAGE_CONTAINER_SM: 'mx-auto max-w-3xl px-4 py-6',
+  PAGE_CONTAINER: 'mx-auto max-w-7xl px-6 py-6',
+  PAGE_CONTAINER_SM: 'mx-auto max-w-3xl px-6 py-6',
   SECTION_STACK: 'space-y-6',
   CARD_STACK: 'space-y-4',
   INLINE_STACK: 'flex items-center gap-3',
@@ -149,43 +149,46 @@ export const LAYOUT = {
 
 export const SURFACE = {
   PAGE: 'bg-white',
-  PAGE_SUBTLE: 'bg-gray-50',
-  CARD: 'rounded-2xl border border-gray-200 bg-white shadow-sm',
+  PAGE_SUBTLE: 'bg-[#FBFAF8]',
+  CARD:
+    'rounded-[4px] border border-[#E2DDD6] bg-white shadow-[0_1px_2px_rgba(22,21,19,0.04)]',
   CARD_HOVER:
-    'rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md',
-  CARD_MUTED: 'rounded-2xl border border-gray-200 bg-gray-50 shadow-sm',
-  PANEL: 'rounded-xl border border-gray-200 bg-white',
-  DIVIDER: 'border-t border-gray-200',
+    'rounded-[4px] border border-[#E2DDD6] bg-white shadow-[0_1px_2px_rgba(22,21,19,0.04)] transition hover:border-[#D3CDC5] hover:shadow-[0_2px_4px_rgba(22,21,19,0.06)]',
+  CARD_MUTED:
+    'rounded-[4px] border border-[#E2DDD6] bg-[#FBFAF8] shadow-[0_1px_2px_rgba(22,21,19,0.03)]',
+  PANEL: 'rounded-[4px] border border-[#E2DDD6] bg-white',
+  DIVIDER: 'border-t border-[#E2DDD6]',
 } as const
 
 export const TYPO = {
-  DISPLAY: 'text-4xl font-bold tracking-tight text-[#312D2A]',
-  H1: 'text-3xl font-bold tracking-tight text-[#312D2A]',
-  H2: 'text-2xl font-semibold tracking-tight text-[#312D2A]',
-  H3: 'text-xl font-semibold text-[#312D2A]',
-  H4: 'text-lg font-semibold text-[#312D2A]',
-  BODY: 'text-sm text-[#312D2A]',
-  BODY_MUTED: 'text-sm text-gray-600',
-  CAPTION: 'text-xs text-gray-500',
-  LABEL: 'text-sm font-medium text-[#312D2A]',
-  LINK: 'text-[#C74634] underline-offset-4 hover:underline',
+  DISPLAY: 'text-[28px] font-medium leading-tight text-[#161513]',
+  H1: 'text-[20px] font-medium leading-7 text-[#161513]',
+  H2: 'text-[20px] font-medium leading-7 text-[#161513]',
+  H3: 'text-[20px] font-medium leading-7 text-[#161513]',
+  H4: 'text-[18px] font-medium leading-6 text-[#161513]',
+  METRIC: 'text-[24px] font-medium leading-none text-[#161513]',
+  BODY: 'text-[16px] leading-6 text-[#161513]',
+  BODY_MUTED: 'text-[16px] leading-6 text-[#66635E]',
+  CAPTION: 'text-[14px] leading-5 text-[#8B857E]',
+  LABEL: 'text-[14px] font-medium leading-5 text-[#161513]',
+  LINK: 'text-[#8C7126] underline underline-offset-4 hover:text-[#33553C]',
 } as const
 
 export const INPUT = {
   BASE:
-    'h-11 w-full rounded-xl border bg-white px-3 text-sm shadow-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-60',
+    'h-12 w-full rounded-[4px] border bg-white px-4 text-[16px] shadow-none outline-none transition disabled:cursor-not-allowed disabled:opacity-60',
 
   DEFAULT:
-    'border-gray-200 bg-white text-[#312D2A] placeholder:text-gray-400 focus:border-[#C74634] focus:ring-4 focus:ring-[#F2D5CE]',
+    'border-[#D3CDC5] bg-white text-[#161513] placeholder:text-[#8B857E] focus:border-[#33553C] focus:ring-2 focus:ring-[#D8E3DA]',
 
   SUBTLE:
-    'border-gray-200 bg-gray-50 text-[#312D2A] placeholder:text-gray-400 focus:border-[#C74634] focus:ring-4 focus:ring-[#F2D5CE]',
+    'border-[#D3CDC5] bg-[#FBFAF8] text-[#161513] placeholder:text-[#8B857E] focus:border-[#33553C] focus:ring-2 focus:ring-[#D8E3DA]',
 
   ERROR:
-    'border-[#F04438] bg-white text-[#312D2A] placeholder:text-gray-400 focus:border-[#D92D20] focus:ring-4 focus:ring-[#FEE4E2]',
+    'border-[#C15B52] bg-white text-[#161513] placeholder:text-[#8B857E] focus:border-[#A24A43] focus:ring-2 focus:ring-[#FAD8D3]',
 
   SUCCESS:
-    'border-[#12B76A] bg-white text-[#312D2A] placeholder:text-gray-400 focus:border-[#039855] focus:ring-4 focus:ring-[#D1FADF]',
+    'border-[#33553C] bg-white text-[#161513] placeholder:text-[#8B857E] focus:border-[#2B4732] focus:ring-2 focus:ring-[#D8E3DA]',
 
   ICON_LEFT: 'pl-10',
   ICON_RIGHT: 'pr-10',
@@ -193,110 +196,111 @@ export const INPUT = {
 
 export const TEXTAREA = {
   BASE:
-    'min-h-[120px] w-full rounded-xl border bg-white px-3 py-2.5 text-sm shadow-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-60',
+    'min-h-[120px] w-full rounded-[4px] border bg-white px-4 py-3 text-[16px] leading-6 shadow-none outline-none transition disabled:cursor-not-allowed disabled:opacity-60',
   DEFAULT:
-    'border-gray-200 bg-white text-[#312D2A] placeholder:text-gray-400 focus:border-[#C74634] focus:ring-4 focus:ring-[#F2D5CE]',
+    'border-[#D3CDC5] bg-white text-[#161513] placeholder:text-[#8B857E] focus:border-[#33553C] focus:ring-2 focus:ring-[#D8E3DA]',
 } as const
 
 export const SELECT = {
   BASE:
-    'h-11 w-full rounded-xl border bg-white px-3 text-sm shadow-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-60',
+    'h-12 w-full rounded-[4px] border bg-white px-4 text-[16px] shadow-none outline-none transition disabled:cursor-not-allowed disabled:opacity-60',
   DEFAULT:
-    'border-gray-200 bg-white text-[#312D2A] focus:border-[#C74634] focus:ring-4 focus:ring-[#F2D5CE]',
+    'border-[#D3CDC5] bg-white text-[#161513] focus:border-[#33553C] focus:ring-2 focus:ring-[#D8E3DA]',
 } as const
 
 export const BUTTON = {
   BASE:
-    'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition outline-none disabled:pointer-events-none disabled:opacity-60',
+    'inline-flex items-center justify-center gap-2 rounded-[4px] px-4 py-2 text-[16px] font-medium transition outline-none disabled:pointer-events-none disabled:opacity-60',
 
   PRIMARY:
-    'bg-[#C74634] text-white hover:bg-[#A93B2C] focus:ring-4 focus:ring-[#F2D5CE]',
+    'border border-[#33553C] bg-[#33553C] text-white hover:bg-[#2B4732] focus:ring-2 focus:ring-[#D8E3DA]',
 
   SECONDARY:
-    'border border-gray-200 bg-white text-[#312D2A] hover:bg-gray-50 focus:ring-4 focus:ring-gray-100',
+    'border border-[#D3CDC5] bg-white text-[#161513] hover:bg-[#FBFAF8] hover:text-[#33553C] focus:ring-2 focus:ring-[#ECE7E1]',
 
   TERTIARY:
-    'bg-transparent text-[#312D2A] hover:bg-gray-50 focus:ring-4 focus:ring-gray-100',
+    'border border-transparent bg-transparent text-[#161513] hover:bg-[#FBFAF8] hover:text-[#33553C] focus:ring-2 focus:ring-[#ECE7E1]',
 
   DARK:
-    'bg-[#312D2A] text-white hover:bg-[#262220] focus:ring-4 focus:ring-gray-200',
+    'border border-[#161513] bg-[#161513] text-white hover:bg-[#2B2A27] focus:ring-2 focus:ring-[#ECE7E1]',
 
   SUCCESS:
-    'bg-[#12B76A] text-white hover:bg-[#039855] focus:ring-4 focus:ring-[#D1FADF]',
+    'border border-[#33553C] bg-[#33553C] text-white hover:bg-[#2B4732] focus:ring-2 focus:ring-[#D8E3DA]',
 
   WARNING:
-    'bg-[#F79009] text-white hover:bg-[#DC6803] focus:ring-4 focus:ring-[#FEF0C7]',
+    'border border-[#F0CC71] bg-[#F0CC71] text-[#161513] hover:bg-[#CAA94B] hover:text-[#161513] focus:ring-2 focus:ring-[#F7E1A0]',
 
   DANGER:
-    'bg-[#F04438] text-white hover:bg-[#D92D20] focus:ring-4 focus:ring-[#FEE4E2]',
+    'border border-[#C15B52] bg-[#C15B52] text-white hover:bg-[#A24A43] focus:ring-2 focus:ring-[#FAD8D3]',
 
   GHOST:
-    'bg-transparent text-[#C74634] hover:bg-[#F9EEEB] focus:ring-4 focus:ring-[#F2D5CE]',
+    'border border-transparent bg-transparent text-[#8C7126] hover:bg-[#FFF7DE] hover:text-[#33553C] focus:ring-2 focus:ring-[#F7E1A0]',
 
   LINK:
-    'bg-transparent px-0 py-0 text-[#C74634] hover:underline focus:ring-0',
+    'bg-transparent px-0 py-0 text-[#8C7126] hover:text-[#33553C] hover:underline focus:ring-0',
 
-  SM: 'h-9 rounded-lg px-3 text-xs',
-  MD: 'h-11 px-4 text-sm',
-  LG: 'h-12 px-5 text-sm',
-  ICON: 'h-11 w-11 rounded-xl p-0',
+  SM: 'h-9 px-3 text-[14px]',
+  MD: 'h-10 px-4 text-[16px]',
+  LG: 'h-12 px-5 text-[16px]',
+  ICON: 'h-10 w-10 p-0',
 } as const
 
 export const BADGE = {
   BASE:
-    'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium',
+    'inline-flex items-center rounded-[4px] px-2.5 py-1 text-[13px] font-medium',
 
-  BRAND: 'bg-[#F9EEEB] text-[#312D2A]',
-  DARK: 'bg-[#312D2A] text-white',
-  NEUTRAL: 'bg-gray-100 text-gray-700',
-  SUCCESS: 'bg-[#ECFDF3] text-[#027A48]',
-  WARNING: 'bg-[#FFFAEB] text-[#B54708]',
-  DANGER: 'bg-[#FEF3F2] text-[#B42318]',
-  INFO: 'bg-[#EFF8FF] text-[#175CD3]',
+  BRAND: 'bg-[#EEF3EF] text-[#213626]',
+  DARK: 'bg-[#161513] text-white',
+  NEUTRAL: 'bg-[#F5F2EE] text-[#514D47]',
+  SUCCESS: 'bg-[#EEF3EF] text-[#213626]',
+  WARNING: 'bg-[#FFF7DE] text-[#8C7126]',
+  DANGER: 'bg-[#FEF3F2] text-[#7D3833]',
+  INFO: 'bg-[#EAF5F9] text-[#00475E]',
 } as const
 
 export const TABLE = {
-  WRAPPER: 'overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm',
-  TABLE: 'min-w-full divide-y divide-gray-200',
-  THEAD: 'bg-gray-50',
-  TH: 'px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500',
-  TD: 'px-4 py-3 text-sm text-[#312D2A]',
-  TR: 'border-t border-gray-100 hover:bg-gray-50',
+  WRAPPER:
+    'overflow-hidden rounded-[4px] border border-[#E2DDD6] bg-white shadow-[0_1px_2px_rgba(22,21,19,0.04)]',
+  TABLE: 'min-w-full divide-y divide-[#E2DDD6]',
+  THEAD: 'bg-[#FBFAF8]',
+  TH: 'px-4 py-3 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-[#8B857E]',
+  TD: 'px-4 py-3 text-[16px] text-[#161513]',
+  TR: 'border-t border-[#ECE7E1] hover:bg-[#FBFAF8]',
 } as const
 
 export const LIST = {
-  ITEM: 'rounded-xl px-3 py-3 transition hover:bg-gray-50',
-  ITEM_ACTIVE: 'rounded-xl bg-[#F9EEEB] px-3 py-3',
+  ITEM: 'rounded-[4px] px-3 py-3 transition hover:bg-[#FBFAF8]',
+  ITEM_ACTIVE: 'rounded-[4px] bg-[#EEF3EF] px-3 py-3',
 } as const
 
 export const NAV = {
   SIDEBAR_ITEM:
-    'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[#312D2A] transition hover:bg-gray-100',
+    'flex items-center gap-3 rounded-[4px] px-3 py-2 text-[16px] font-medium text-[#161513] transition hover:bg-[#FBFAF8]',
   SIDEBAR_ITEM_ACTIVE:
-    'flex items-center gap-3 rounded-xl bg-[#F9EEEB] px-3 py-2 text-sm font-semibold text-[#312D2A]',
+    'flex items-center gap-3 rounded-[4px] bg-[#EEF3EF] px-3 py-2 text-[16px] font-medium text-[#213626]',
   TAB:
-    'inline-flex items-center border-b-2 border-transparent px-3 py-2 text-sm font-medium text-gray-600 transition hover:text-[#312D2A]',
+    'inline-flex items-center border-b-2 border-transparent px-0 py-2 text-[16px] font-medium text-[#66635E] transition hover:text-[#161513]',
   TAB_ACTIVE:
-    'inline-flex items-center border-b-2 border-[#C74634] px-3 py-2 text-sm font-semibold text-[#312D2A]',
+    'inline-flex items-center border-b-2 border-[#33553C] px-0 py-2 text-[16px] font-medium text-[#33553C]',
 } as const
 
 export const ALERT = {
-  BASE: 'rounded-xl border px-4 py-3 text-sm',
-  INFO: 'border-[#D1E9FF] bg-[#EFF8FF] text-[#175CD3]',
-  SUCCESS: 'border-[#D1FADF] bg-[#ECFDF3] text-[#027A48]',
-  WARNING: 'border-[#FEF0C7] bg-[#FFFAEB] text-[#B54708]',
-  DANGER: 'border-[#FEE4E2] bg-[#FEF3F2] text-[#B42318]',
+  BASE: 'rounded-[4px] border px-4 py-3 text-[14px]',
+  INFO: 'border-[#C9E4EE] bg-[#EAF5F9] text-[#00475E]',
+  SUCCESS: 'border-[#D8E3DA] bg-[#EEF3EF] text-[#213626]',
+  WARNING: 'border-[#F7E1A0] bg-[#FFF7DE] text-[#8C7126]',
+  DANGER: 'border-[#FAD8D3] bg-[#FEF3F2] text-[#7D3833]',
 } as const
 
 export const AVATAR = {
   BASE:
-    'flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold',
+    'flex h-10 w-10 items-center justify-center rounded-[4px] text-[14px] font-medium',
 
-  BRAND: 'bg-[#C74634] text-white',
-  DARK: 'bg-[#312D2A] text-white',
-  LIGHT: 'bg-[#F9EEEB] text-[#312D2A]',
-  NEUTRAL: 'bg-[#CBCECE] text-black',
-  WHITE: 'border border-gray-300 bg-white text-[#312D2A]',
+  BRAND: 'bg-[#33553C] text-white',
+  DARK: 'bg-[#161513] text-white',
+  LIGHT: 'bg-[#EEF3EF] text-[#213626]',
+  NEUTRAL: 'bg-[#F5F2EE] text-[#161513]',
+  WHITE: 'border border-[#D3CDC5] bg-white text-[#161513]',
 } as const
 
 export const INPUT_BASE = `${INPUT.BASE} ${INPUT.DEFAULT}`

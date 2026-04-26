@@ -1,44 +1,50 @@
 import { useState } from 'react'
 import type { Pagina } from './types'
-import { Header } from './components'
 import { AuthProvider } from './auth'
-import Dashboard from './pages/Dashboard'
-import Tareas from './pages/Tareas'
-import Reportes from './pages/Reportes'
-import Proyectos from './pages/Proyectos'
+import { PortalProvider, usePortal } from './features/portal'
+import PortalHeader from './features/portal/components/PortalHeader'
+import DashboardPage from './features/portal/pages/DashboardPage'
+import TasksPage from './features/portal/pages/TasksPage'
+import ProjectsPage from './features/portal/pages/ProjectsPage'
+import AccessCodesPage from './features/portal/pages/AccessCodesPage'
+import { useAuth } from './auth'
+import { obtenerNotificacionesUsuario } from './features/portal/selectors'
 
 function AppContenido() {
   const [paginaActual, setPaginaActual] = useState<Pagina>('dashboard')
+  const { usuarioActual } = useAuth()
+  const { notifications, tasks } = usePortal()
 
-  const manejarCerrarSesion = () => {
-    setPaginaActual('dashboard')
-  }
+  const notificaciones = obtenerNotificacionesUsuario(
+    usuarioActual,
+    notifications,
+    tasks,
+  )
 
   const renderizarPagina = () => {
     switch (paginaActual) {
       case 'dashboard':
-        return <Dashboard />
+        return <DashboardPage />
       case 'tareas':
-        return <Tareas />
-      case 'reportes':
-        return <Reportes />
+        return <TasksPage />
       case 'proyectos':
-        return <Proyectos />
+        return <ProjectsPage />
+      case 'codigos':
+        return <AccessCodesPage />
       default:
-        return <Dashboard />
+        return <DashboardPage />
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header
-        paginaActual={paginaActual}
-        onNavegar={setPaginaActual}
-        onCerrarSesion={manejarCerrarSesion}
-        cantidadNotificaciones={3}
+    <div className="portal-visual-root min-h-screen bg-white text-[#161513]">
+      <PortalHeader
+        currentPage={paginaActual}
+        onNavigate={setPaginaActual}
+        notifications={notificaciones}
       />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="pb-10">
         {renderizarPagina()}
       </main>
     </div>
@@ -48,7 +54,9 @@ function AppContenido() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContenido />
+      <PortalProvider>
+        <AppContenido />
+      </PortalProvider>
     </AuthProvider>
   )
 }

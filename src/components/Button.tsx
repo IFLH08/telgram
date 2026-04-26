@@ -137,15 +137,15 @@ export function BotonIconoPequeno({
       aria-label={label}
       title={label}
       className={cx(
-        'inline-flex h-9 w-9 items-center justify-center rounded-lg border transition',
-        variante === 'primario' && 'bg-[#C74634] text-white hover:bg-[#A93B2C] border-transparent',
-        variante === 'secundario' && 'border-gray-200 bg-white text-[#312D2A] hover:bg-gray-50',
-        variante === 'terciario' && 'border-transparent bg-transparent text-[#312D2A] hover:bg-gray-50',
-        variante === 'oscuro' && 'border-transparent bg-[#312D2A] text-white hover:bg-[#262220]',
-        variante === 'exito' && 'border-transparent bg-[#12B76A] text-white hover:bg-[#039855]',
-        variante === 'advertencia' && 'border-transparent bg-[#F79009] text-white hover:bg-[#DC6803]',
-        variante === 'peligro' && 'border-transparent bg-[#F04438] text-white hover:bg-[#D92D20]',
-        variante === 'ghost' && 'border-transparent bg-transparent text-[#C74634] hover:bg-[#F9EEEB]',
+        'inline-flex h-9 w-9 items-center justify-center rounded-[4px] border transition',
+        variante === 'primario' && 'border-[#33553C] bg-[#33553C] text-white hover:bg-[#2B4732]',
+        variante === 'secundario' && 'border-[#D3CDC5] bg-white text-[#161513] hover:bg-[#FBFAF8] hover:text-[#33553C]',
+        variante === 'terciario' && 'border-transparent bg-transparent text-[#161513] hover:bg-[#FBFAF8] hover:text-[#33553C]',
+        variante === 'oscuro' && 'border-[#161513] bg-[#161513] text-white hover:bg-[#2B2A27]',
+        variante === 'exito' && 'border-[#33553C] bg-[#33553C] text-white hover:bg-[#2B4732]',
+        variante === 'advertencia' && 'border-[#F0CC71] bg-[#F0CC71] text-[#161513] hover:bg-[#CAA94B]',
+        variante === 'peligro' && 'border-[#C15B52] bg-[#C15B52] text-white hover:bg-[#A24A43]',
+        variante === 'ghost' && 'border-transparent bg-transparent text-[#8C7126] hover:bg-[#FFF7DE] hover:text-[#33553C]',
         className
       )}
       {...props}

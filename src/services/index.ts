@@ -1,6 +1,0 @@
-export * from './api'
-export * from './auth.service'
-export * from './projects.service'
-export * from './reports.service'
-export * from './tasks.service'
-export * from './ia.service'

@@ -1,4 +1,4 @@
-export type Pagina = 'dashboard' | 'tareas' | 'reportes' | 'proyectos'
+export type Pagina = 'dashboard' | 'tareas' | 'proyectos' | 'codigos'
 
 export type ID = string
 
@@ -11,7 +11,7 @@ export interface PropsIconoSVG {
   className?: string
 }
 
-export type RolUsuario = 'admin' | 'manager' | 'developer'
+export type RolUsuario = 'admin' | 'developer'
 
 export interface Usuario extends ConTimestamps {
   id: ID
