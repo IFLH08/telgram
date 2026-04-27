@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repo Dead Code Audit"
+  short_description: "Audita codigo muerto y archivos sin uso."
+  default_prompt: "Inspect the whole repository, trace real entrypoints, detect unused files, dead code, legacy surfaces, and generated artifacts, then produce an evidence-backed dead-weight audit."

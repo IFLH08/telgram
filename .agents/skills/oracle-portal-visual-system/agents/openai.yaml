@@ -1,0 +1,4 @@
+interface:
+  display_name: "Oracle Portal Visual System"
+  short_description: "Sistema visual Oracle para el portal"
+  default_prompt: "Use $oracle-portal-visual-system to apply the approved Oracle-style visual system to this portal frontend."

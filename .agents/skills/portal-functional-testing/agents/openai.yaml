@@ -1,0 +1,4 @@
+interface:
+  display_name: "Portal Functional Testing"
+  short_description: "Pruebas funcionales del portal"
+  default_prompt: "Use $portal-functional-testing to run real functional checks on the frontend portal, add minimal Playwright coverage when missing, and report failures with fixes."

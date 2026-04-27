@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Docs Organizer"
+  short_description: "Analyze and organize incoming project docs"
+  default_prompt: "Use $project-docs-organizer to analyze and organize the project documentation I share."
