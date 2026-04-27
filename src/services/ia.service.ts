@@ -3,7 +3,8 @@ export interface GenerarContenidoIAResponse {
 }
 
 export async function generarContenidoIA(prompt: string): Promise<GenerarContenidoIAResponse> {
-    const response = await fetch('http://localhost:3001/api/ia/generar', {
+    const nodeBackendUrl = import.meta.env.VITE_NODE_BACKEND_URL || 'http://localhost:3001'
+    const response = await fetch(`${nodeBackendUrl}/api/ia/generar`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
