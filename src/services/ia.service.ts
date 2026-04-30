@@ -3,7 +3,12 @@ export interface GenerarContenidoIAResponse {
 }
 
 export async function generarContenidoIA(prompt: string): Promise<GenerarContenidoIAResponse> {
-    const nodeBackendUrl = import.meta.env.VITE_NODE_BACKEND_URL || 'http://localhost:3001'
+    const nodeBackendUrl = import.meta.env.VITE_NODE_BACKEND_URL
+
+    if (!nodeBackendUrl) {
+        throw new Error('VITE_NODE_BACKEND_URL no está configurado para este entorno.')
+    }
+    
     const response = await fetch(`${nodeBackendUrl}/api/ia/generar`, {
         method: 'POST',
         headers: {
