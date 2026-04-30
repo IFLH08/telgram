@@ -279,8 +279,9 @@ public class ConversationalBotService {
                 "🧠 Procesando petición resumida y evaluando límites de tiempo (máx 4h según buenas prácticas)...",
                 telegramClient, null);
 
+        String userInstruction = cleanAddTaskCommand(requestText);
         String prompt = "Resume esta tarea en formato JSON. Genera nombre, descripcion, horasEstimadas y idPrioridad (1 baja, 2 media, 3 alta). IMPORTANTE: La regla de Oracle indica que ninguna tarea debe tener un estimado mayor a 4 horas. Si el requerimiento excede las 4 horas, debes subdividir lógicamente la tarea en múltiples subtareas (cada una de máximo 4 horas). Debes devolver el resultado ESTRICTAMENTE como un ARREGLO JSON (incluso si es una sola tarea): [{\"nombre\": \"...\", \"descripcion\": \"...\", \"horasEstimadas\": X, \"idPrioridad\": Y}]. Responde puro JSON:\n"
-                + requestText;
+                + userInstruction;
         String llmRawResponse = "";
 
         try {
@@ -293,7 +294,7 @@ public class ConversationalBotService {
                 if (start != -1 && end != -1 && end > start) {
                     cleanedJson = llmRawResponse.substring(start, end + 1);
                 } else {
-                    cleanedJson = "[" + cleanedJson + "]";
+                    cleanedJson = buildFallbackTaskJson(userInstruction);
                 }
             }
 
@@ -326,6 +327,63 @@ public class ConversationalBotService {
                     "🚨 MODO DEBUG 🚨\nEsto respondió la red al esperar arreglo JSON:\n" + llmRawResponse,
                     telegramClient, null);
         }
+    }
+
+    private String cleanAddTaskCommand(String requestText) {
+        return requestText
+                .replaceFirst("(?i)^/addtask\\s*", "")
+                .replaceFirst("(?i)^/additem\\s*", "")
+                .trim();
+    }
+
+    private String buildFallbackTaskJson(String userInstruction) throws Exception {
+        String instruction = userInstruction == null || userInstruction.isBlank()
+                ? "Nueva tarea solicitada desde Telegram"
+                : userInstruction.trim();
+
+        double horasEstimadas = inferEstimatedHours(instruction);
+        int idPrioridad = inferPriorityId(instruction);
+
+        com.fasterxml.jackson.databind.node.ArrayNode array = objectMapper.createArrayNode();
+        com.fasterxml.jackson.databind.node.ObjectNode task = objectMapper.createObjectNode();
+        task.put("nombre", buildFallbackTaskName(instruction));
+        task.put("descripcion", instruction);
+        task.put("horasEstimadas", horasEstimadas);
+        task.put("idPrioridad", idPrioridad);
+        array.add(task);
+        return objectMapper.writeValueAsString(array);
+    }
+
+    private String buildFallbackTaskName(String instruction) {
+        String normalized = instruction.replaceAll("\\s+", " ").trim();
+        if (normalized.length() <= 80) {
+            return normalized;
+        }
+        return normalized.substring(0, 77) + "...";
+    }
+
+    private double inferEstimatedHours(String instruction) {
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("(\\d+(?:[\\.,]\\d+)?)\\s*(?:h|hr|hrs|hora|horas)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(instruction);
+
+        if (matcher.find()) {
+            double hours = Double.parseDouble(matcher.group(1).replace(',', '.'));
+            return Math.max(0.5, Math.min(4.0, hours));
+        }
+
+        return 4.0;
+    }
+
+    private int inferPriorityId(String instruction) {
+        String lower = instruction.toLowerCase();
+        if (lower.contains("alta") || lower.contains("urgente") || lower.contains("crítica") || lower.contains("critica")) {
+            return 3;
+        }
+        if (lower.contains("baja")) {
+            return 1;
+        }
+        return 2;
     }
 
     private void handleMissingData(Long chatId, String requestText, SessionManager.UserSession session) {
