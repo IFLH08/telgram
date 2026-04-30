@@ -37,10 +37,10 @@ steps:
     name: "Docker Login"
     command: |
       cd MtdrSpring
-      oci os object get --bucket-name reacttodo-ysmiy --name deployment_config.tgz --file deployment_config.tgz
+      oci os object get --bucket-name reacttodo-h2jie --name deployment_config.tgz --file deployment_config.tgz
       tar -xzvf deployment_config.tgz
       source env.sh
-      cat at.cfg | docker login -u "axyyzvpljivg/adan0001@gmail.com" --password-stdin phx.ocir.io
+      cat at.cfg | docker login -u "axwlv7qiloev/a01785078@tec.mx" --password-stdin mx-queretaro-1.ocir.io
 
   - type: Command
     name: "Build"
