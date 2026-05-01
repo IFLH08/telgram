@@ -1,6 +1,6 @@
-version: 0.1 
+version: 0.1
 component: build
-timeoutInSeconds: 600
+timeoutInSeconds: 1200
 shell: bash
 
 env:
@@ -13,26 +13,39 @@ env:
 steps:
   - type: Command
     name: "Install GraalVM Enterprise 22.x Native Image for Java22"
-    command:  yum -y install graalvm-22-jdk.x86_64;
-              ls /usr/lib64/graalvm/
+    command: |
+      yum -y install graalvm-22-jdk.x86_64
+      ls /usr/lib64/graalvm/
 
   - type: Command
     name: "Set PATH Variable"
-    command: export PATH=$JAVA_HOME/bin:$PATH
+    command: |
+      export PATH=$JAVA_HOME/bin:$PATH
+      java -version
+
+  - type: Command
+    name: "Install Node.js and pnpm"
+    command: |
+      curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+      yum install -y nodejs
+      node -v
+      npm -v
+      npm install -g pnpm
+      pnpm -v
 
   - type: Command
     name: "Docker Login"
-    command:  cd MtdrSpring;
-              oci os object get --bucket-name reacttodo-ysmiy --name deployment_config.tgz --file deployment_config.tgz;
-              tar -xzvf deployment_config.tgz;
-              source env.sh;
-              cat at.cfg | docker login -u "axyyzvpljivg/adan0001@gmail.com" --password-stdin phx.ocir.io
+    command: |
+      cd MtdrSpring
+      oci os object get --bucket-name reacttodo-h2jie --name deployment_config.tgz --file deployment_config.tgz
+      tar -xzvf deployment_config.tgz
+      source env.sh
+      cat at.cfg | docker login -u "axwlv7qiloev/a01785078@tec.mx" --password-stdin mx-queretaro-1.ocir.io
 
   - type: Command
     name: "Build"
-    command:  cd MtdrSpring;
-              source env.sh;
-              (cd backend;source build.sh)
-
-
-
+    command: |
+      cd MtdrSpring
+      source env.sh
+      cd backend
+      source build.sh
