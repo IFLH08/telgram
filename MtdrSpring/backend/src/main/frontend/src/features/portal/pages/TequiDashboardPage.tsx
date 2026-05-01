@@ -12,7 +12,6 @@ import { usePortal } from '../context'
 import { esAdminPortal } from '../selectors'
 import { VelocityChart } from '../components/dashboard/VelocityChart'
 import { ThroughputKPI } from '../components/dashboard/ThroughputKPI'
-import { BurndownChart } from '../components/dashboard/BurndownChart'
 import { CumulativeFlowDiagram } from '../components/dashboard/CumulativeFlowDiagram'
 import { CycleTimeScatter } from '../components/dashboard/CycleTimeScatter'
 import { BugsHeatmap } from '../components/dashboard/BugsHeatmap'
@@ -36,16 +35,6 @@ export default function TequiDashboardPage() {
     { sprint: 'Sprint 2', completed: 18, planned: 16 },
     { sprint: 'Sprint 3', completed: 14, planned: 14 },
     { sprint: 'Sprint 4', completed: 20, planned: 18 },
-  ]
-
-  const burndownData = [
-    { day: 'Día 1', remaining: 20, ideal: 20 },
-    { day: 'Día 2', remaining: 18, ideal: 18 },
-    { day: 'Día 3', remaining: 15, ideal: 16 },
-    { day: 'Día 4', remaining: 12, ideal: 14 },
-    { day: 'Día 5', remaining: 8, ideal: 12 },
-    { day: 'Día 6', remaining: 5, ideal: 10 },
-    { day: 'Día 7', remaining: 2, ideal: 8 },
   ]
 
   const cycleTimeData = [
@@ -90,7 +79,7 @@ export default function TequiDashboardPage() {
     <section className={PAGE_CONTAINER}>
       <div className="space-y-6">
         <div>
-          <h1 className={TYPO.H1}>Dashboard Tequi</h1>
+          <h1 className={TYPO.H1}>Dashboard</h1>
           <p className={TYPO.BODY_MUTED}>
             Métricas avanzadas de desarrollo y seguimiento de proyectos.
           </p>
@@ -120,8 +109,8 @@ export default function TequiDashboardPage() {
           />
         </div>
 
-        {/* Gráficos de Velocidad y Burndown */}
-        <div className="grid gap-4 md:grid-cols-2">
+        {/* Gráfico de Velocidad */}
+        <div className="grid gap-4">
           <Card>
             <CardHeader>
               <CardTitle>Velocidad por Sprint</CardTitle>
@@ -134,17 +123,6 @@ export default function TequiDashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Burndown Chart</CardTitle>
-              <CardDescription>
-                Progreso de trabajo restante vs ideal.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <BurndownChart data={burndownData} />
-            </CardContent>
-          </Card>
         </div>
 
         {/* Diagramas de Flujo y Cycle Time */}

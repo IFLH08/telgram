@@ -3,7 +3,6 @@ import type { Pagina } from './types'
 import { AuthProvider } from './auth'
 import { PortalProvider, usePortal } from './features/portal'
 import PortalHeader from './features/portal/components/PortalHeader'
-import DashboardPage from './features/portal/pages/DashboardPage'
 import TasksPage from './features/portal/pages/TasksPage'
 import ProjectsPage from './features/portal/pages/ProjectsPage'
 import AccessCodesPage from './features/portal/pages/AccessCodesPage'
@@ -13,7 +12,7 @@ import { useAuth } from './auth'
 import { obtenerNotificacionesUsuario } from './features/portal/selectors'
 
 function AppContenido() {
-  const [paginaActual, setPaginaActual] = useState<Pagina>('dashboard')
+  const [paginaActual, setPaginaActual] = useState<Pagina>('tequi')
   const { usuarioActual } = useAuth()
   const { notifications, tasks } = usePortal()
 
@@ -25,8 +24,6 @@ function AppContenido() {
 
   const renderizarPagina = () => {
     switch (paginaActual) {
-      case 'dashboard':
-        return <DashboardPage />
       case 'tareas':
         return <TasksPage />
       case 'proyectos':
@@ -36,7 +33,7 @@ function AppContenido() {
       case 'tequi':
         return <TequiDashboardPage />
       default:
-        return <DashboardPage />
+        return <TequiDashboardPage />
     }
   }
 

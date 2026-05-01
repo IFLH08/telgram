@@ -9,7 +9,6 @@ import { useAuth } from '../../../auth'
 import { BotonIcono } from '../../../components/Button'
 import {
   IconoCampana,
-  IconoDashboard,
   IconoProyectos,
   IconoTareas,
 } from '../../../components/Icons'
@@ -30,11 +29,6 @@ const navigationItems: Array<{
   page: Pagina
 }> = [
   {
-    page: 'dashboard',
-    label: 'Dashboard',
-    icon: <IconoDashboard className="h-4 w-4" />,
-  },
-  {
     page: 'tareas',
     label: 'Tareas',
     icon: <IconoTareas className="h-4 w-4" />,
@@ -51,7 +45,7 @@ const navigationItems: Array<{
   },
   {
     page: 'tequi',
-    label: 'Dashboard Tequi',
+    label: 'Dashboard',
     icon: <span className="text-xs font-bold">📊</span>,
   },
 ]
@@ -116,7 +110,7 @@ export default function PortalHeader({
             <div className="flex min-w-0 flex-col gap-2">
               <button
                 type="button"
-                onClick={() => onNavigate('dashboard')}
+                onClick={() => onNavigate('tequi')}
                 className="group inline-flex w-fit flex-col text-left"
               >
                 <span
