@@ -16,6 +16,8 @@ instalar pnpm dentro de la carpeta frontend
 
 Para corer el frontend localmente (sin backend):
 pnpm run dev 
+pnpm run dev:backend
+
 
 Para correrlo localmente conectado con la ATP:
 
