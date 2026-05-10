@@ -1,15 +1,14 @@
 package com.springboot.MyTodoList.model;
 
 import jakarta.persistence.*;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "PROYECTOS")
+@Table(name = "PROYECTOS", schema = "EQUIPO63")
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Proyecto {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID_PROYECTO")
     private Long idProyecto;
 
@@ -20,10 +19,10 @@ public class Proyecto {
     private String descripcion;
 
     @Column(name = "FECHA_INICIO")
-    private OffsetDateTime fechaInicio;
+    private LocalDateTime fechaInicio;
 
     @Column(name = "FECHA_FIN")
-    private OffsetDateTime fechaFin;
+    private LocalDateTime fechaFin;
 
     @Column(name = "CODIGOACCESO", length = 8)
     private String codigoAcceso;
@@ -55,19 +54,19 @@ public class Proyecto {
         this.descripcion = descripcion;
     }
 
-    public OffsetDateTime getFechaInicio() {
+    public LocalDateTime getFechaInicio() {
         return fechaInicio;
     }
 
-    public void setFechaInicio(OffsetDateTime fechaInicio) {
+    public void setFechaInicio(LocalDateTime fechaInicio) {
         this.fechaInicio = fechaInicio;
     }
 
-    public OffsetDateTime getFechaFin() {
+    public LocalDateTime getFechaFin() {
         return fechaFin;
     }
 
-    public void setFechaFin(OffsetDateTime fechaFin) {
+    public void setFechaFin(LocalDateTime fechaFin) {
         this.fechaFin = fechaFin;
     }
 

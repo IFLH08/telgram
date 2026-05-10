@@ -12,7 +12,7 @@ import { useAuth } from './auth'
 import { obtenerNotificacionesUsuario } from './features/portal/selectors'
 
 function AppContenido() {
-  const [paginaActual, setPaginaActual] = useState<Pagina>('tequi')
+  const [paginaActual, setPaginaActual] = useState<Pagina>('dashboard')
   const { usuarioActual } = useAuth()
   const { notifications, tasks } = usePortal()
 
@@ -30,10 +30,12 @@ function AppContenido() {
         return <ProjectsPage />
       case 'codigos':
         return <AccessCodesPage />
+      case 'dashboard':
+        return <KpiDashboardPage showBackLink={false} />
       case 'tequi':
         return <TequiDashboardPage />
       default:
-        return <TequiDashboardPage />
+        return <KpiDashboardPage showBackLink={false} />
     }
   }
 

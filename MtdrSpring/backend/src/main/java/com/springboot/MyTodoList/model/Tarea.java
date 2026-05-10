@@ -1,15 +1,14 @@
 package com.springboot.MyTodoList.model;
 
 import jakarta.persistence.*;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "TAREAS")
+@Table(name = "TAREAS", schema = "EQUIPO63")
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Tarea {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID_TAREA")
     private Long idTarea;
 
@@ -20,10 +19,10 @@ public class Tarea {
     private String descripcion;
 
     @Column(name = "FECHA_CREACION", nullable = false)
-    private OffsetDateTime fechaCreacion = OffsetDateTime.now();
+    private LocalDateTime fechaCreacion = LocalDateTime.now();
 
     @Column(name = "FECHA_ENTREGA")
-    private OffsetDateTime fechaEntrega;
+    private LocalDateTime fechaEntrega;
 
     @Column(name = "HORAS_ESTIMADAS")
     private Double horasEstimadas;
@@ -35,8 +34,8 @@ public class Tarea {
     @JoinColumn(name = "ID_ESTADO")
     private EstadoTarea estado;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_SPRINT", nullable = true)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "ID_SPRINT", nullable = false)
     private Sprint sprint;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -47,7 +46,7 @@ public class Tarea {
     @JoinColumn(name = "ID_PRIORIDAD")
     private Prioridad prioridad;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "DELETED_BY")
     private Usuario deletedBy;
 
@@ -55,10 +54,16 @@ public class Tarea {
     private Boolean eliminada = false;
 
     @Column(name = "FECHA_ELIMINACION")
-    private OffsetDateTime fechaEliminacion;
+    private LocalDateTime fechaEliminacion;
 
     @Column(name = "HORAS_REALES")
     private Double horasReales;
+
+    @Column(name = "FECHA_INICIO_REAL")
+    private LocalDateTime fechaInicioReal;
+
+    @Column(name = "FECHA_FIN_REAL")
+    private LocalDateTime fechaFinReal;
 
     public Tarea() {
     }
@@ -87,19 +92,19 @@ public class Tarea {
         this.descripcion = descripcion;
     }
 
-    public OffsetDateTime getFechaCreacion() {
+    public LocalDateTime getFechaCreacion() {
         return fechaCreacion;
     }
 
-    public void setFechaCreacion(OffsetDateTime fechaCreacion) {
+    public void setFechaCreacion(LocalDateTime fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
     }
 
-    public OffsetDateTime getFechaEntrega() {
+    public LocalDateTime getFechaEntrega() {
         return fechaEntrega;
     }
 
-    public void setFechaEntrega(OffsetDateTime fechaEntrega) {
+    public void setFechaEntrega(LocalDateTime fechaEntrega) {
         this.fechaEntrega = fechaEntrega;
     }
 
@@ -167,11 +172,11 @@ public class Tarea {
         this.eliminada = eliminada;
     }
 
-    public OffsetDateTime getFechaEliminacion() {
+    public LocalDateTime getFechaEliminacion() {
         return fechaEliminacion;
     }
 
-    public void setFechaEliminacion(OffsetDateTime fechaEliminacion) {
+    public void setFechaEliminacion(LocalDateTime fechaEliminacion) {
         this.fechaEliminacion = fechaEliminacion;
     }
 
@@ -181,5 +186,21 @@ public class Tarea {
 
     public void setHorasReales(Double horasReales) {
         this.horasReales = horasReales;
+    }
+
+    public LocalDateTime getFechaInicioReal() {
+        return fechaInicioReal;
+    }
+
+    public void setFechaInicioReal(LocalDateTime fechaInicioReal) {
+        this.fechaInicioReal = fechaInicioReal;
+    }
+
+    public LocalDateTime getFechaFinReal() {
+        return fechaFinReal;
+    }
+
+    public void setFechaFinReal(LocalDateTime fechaFinReal) {
+        this.fechaFinReal = fechaFinReal;
     }
 }

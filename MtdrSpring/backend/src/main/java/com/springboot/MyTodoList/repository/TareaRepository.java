@@ -7,11 +7,25 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 import com.springboot.MyTodoList.dto.TareaSprintDTO;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.Query;
 
 @Repository
 public interface TareaRepository extends JpaRepository<Tarea, Long> {
     List<Tarea> findByUsuarioAsignadoIdUsuario(Long idUsuario);
+
+    @Query("SELECT COALESCE(MAX(t.idTarea), 0) FROM Tarea t")
+    Long findMaxIdTarea();
+
+    @Query("SELECT t FROM Tarea t " +
+           "LEFT JOIN FETCH t.sprint " +
+           "LEFT JOIN FETCH t.estado " +
+           "LEFT JOIN FETCH t.usuarioAsignado " +
+           "LEFT JOIN FETCH t.prioridad " +
+           "WHERE t.usuarioAsignado.idUsuario = :idUsuario " +
+           "AND t.eliminada = false " +
+           "ORDER BY t.fechaCreacion DESC, t.idTarea DESC")
+    List<Tarea> findVisibleByUsuarioAsignado(@Param("idUsuario") Long idUsuario);
 
     // Punto 5: Mostrar la tabla de tasks del SPRINT actual haciendo JOIN con
     // usuario

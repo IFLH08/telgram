@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
    );
  */
 @Entity
-@Table(name = "USERS")
+@Table(name = "USERS", schema = "EQUIPO63")
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class User {
     @Id

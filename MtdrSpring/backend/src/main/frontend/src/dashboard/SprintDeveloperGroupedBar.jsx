@@ -11,14 +11,14 @@ import {
 } from 'recharts';
 
 const CHART_COLORS = [
-  '#2563EB',
-  '#16A34A',
-  '#F97316',
-  '#7C3AED',
-  '#DB2777',
-  '#0891B2',
-  '#CA8A04',
-  '#475569',
+  '#3B77B6',
+  '#F18631',
+  '#4FA23F',
+  '#C73532',
+  '#8D6AB8',
+  '#7A7A7A',
+  '#B7A238',
+  '#48A4A6',
 ];
 
 function formatValue(value, unit) {
@@ -39,6 +39,8 @@ export function SprintDeveloperGroupedBar({
   data,
   series,
   unit,
+  xAxisLabel,
+  yAxisLabel,
   allowDecimals = false,
 }) {
   return (
@@ -50,25 +52,31 @@ export function SprintDeveloperGroupedBar({
 
       <div className="dashboard-chart-frame" role="img" aria-label={title}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 12, right: 12, bottom: 12, left: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+          <BarChart data={data} margin={{ top: 10, right: 18, bottom: 46, left: 42 }}>
+            <CartesianGrid stroke="#E5E7EB" />
             <XAxis
               dataKey="sprint"
-              axisLine={false}
-              tickLine={false}
-              tickMargin={12}
+              axisLine={{ stroke: '#6B7280' }}
+              tickLine={{ stroke: '#6B7280' }}
+              tickMargin={10}
               minTickGap={16}
-              stroke="#475569"
+              stroke="#111827"
+              label={xAxisLabel ? { value: xAxisLabel, position: 'insideBottom', offset: -28 } : undefined}
             />
             <YAxis
-              axisLine={false}
-              tickLine={false}
+              axisLine={{ stroke: '#6B7280' }}
+              tickLine={{ stroke: '#6B7280' }}
               tickMargin={8}
               allowDecimals={allowDecimals}
-              stroke="#475569"
+              stroke="#111827"
+              label={
+                yAxisLabel
+                  ? { value: yAxisLabel, angle: -90, position: 'insideLeft', offset: -28, style: { textAnchor: 'middle' } }
+                  : undefined
+              }
             />
             <Tooltip
-              cursor={{ fill: '#E2E8F0', opacity: 0.45 }}
+              cursor={{ fill: '#E5E7EB', opacity: 0.5 }}
               formatter={(value, name) => [formatValue(value, unit), name]}
               labelFormatter={(label) => `Sprint: ${label}`}
               contentStyle={{
@@ -77,15 +85,15 @@ export function SprintDeveloperGroupedBar({
                 boxShadow: '0 12px 30px rgba(15, 23, 42, 0.12)',
               }}
             />
-            <Legend wrapperStyle={{ paddingTop: 12 }} />
+            <Legend align="left" verticalAlign="top" wrapperStyle={{ paddingBottom: 12 }} />
             {series.map((developer, index) => (
               <Bar
                 key={developer.key}
                 dataKey={developer.key}
                 name={developer.label}
                 fill={CHART_COLORS[index % CHART_COLORS.length]}
-                radius={[5, 5, 0, 0]}
-                maxBarSize={54}
+                radius={[0, 0, 0, 0]}
+                maxBarSize={48}
               />
             ))}
           </BarChart>

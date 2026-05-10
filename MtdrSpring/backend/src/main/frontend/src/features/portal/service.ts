@@ -677,19 +677,20 @@ function payloadTareaApi(input: PortalTaskInput): Partial<ApiTarea> {
   const sprintId = Number(input.sprintId)
   const usuarioAsignadoId = Number(input.personaAsignadaId)
 
-  if (!Number.isFinite(sprintId)) {
+  if (!input.sprintId.trim() || !Number.isFinite(sprintId) || sprintId <= 0) {
     throw new Error('El sprint seleccionado no tiene un ID valido para guardar en la base de datos.')
   }
 
-  if (!Number.isFinite(usuarioAsignadoId)) {
+  if (!input.personaAsignadaId.trim() || !Number.isFinite(usuarioAsignadoId) || usuarioAsignadoId <= 0) {
     throw new Error('El responsable seleccionado no tiene un ID valido para guardar en la base de datos.')
   }
 
   return {
     nombre: input.nombre.trim(),
     descripcion: input.descripcion.trim(),
-    fechaEntrega: `${input.fechaEntrega}T00:00:00Z`,
+    fechaEntrega: `${input.fechaEntrega}T00:00:00`,
     horasEstimadas: input.horasEstimadas,
+    horasReales: input.horasReales,
     puntosHistoria: input.puntosHistoria,
     estado: estadoParaApi(input.estatus),
     prioridad: prioridadParaApi(input.prioridad),
@@ -815,6 +816,7 @@ export async function actualizarPortalTask(
     descripcion: cambios.descripcion ?? actual.descripcion,
     fechaEntrega: cambios.fechaEntrega ?? actual.fechaEntrega,
     horasEstimadas: cambios.horasEstimadas ?? actual.horasEstimadas,
+    horasReales: cambios.horasReales ?? actual.horasReales,
     puntosHistoria: cambios.puntosHistoria ?? actual.puntosHistoria,
     estatus: cambios.estatus ?? actual.estatus,
     prioridad: cambios.prioridad ?? actual.prioridad,
@@ -903,6 +905,18 @@ async function actualizarPortalTaskMock(
 export async function actualizarPortalTaskStatus(
   taskId: string,
   estatus: PortalTask['estatus'],
+  horasReales?: number,
+): Promise<PortalTask> {
+  return actualizarPortalTask(taskId, {
+    estatus,
+    ...(horasReales === undefined ? {} : { horasReales }),
+  })
+}
+
+async function actualizarPortalTaskStatusMock(
+  taskId: string,
+  estatus: PortalTask['estatus'],
+  horasReales?: number,
 ): Promise<PortalTask> {
   const actual = tasksDb.find((task) => task.id === taskId)
 
@@ -915,6 +929,7 @@ export async function actualizarPortalTaskStatus(
   const actualizada: PortalTask = {
     ...actual,
     estatus,
+    horasReales: horasReales ?? actual.horasReales,
     actualizadoEn: ahoraActual,
   }
 
@@ -1029,21 +1044,17 @@ async function eliminarPortalTaskMock(taskId: string): Promise<void> {
 export async function crearPortalProject(
   input: PortalProjectInput,
 ): Promise<PortalProject> {
-  const nuevoProject: PortalProject = {
-    id: siguienteId('proyecto'),
-    nombre: input.nombre.trim(),
-    descripcion: input.descripcion.trim(),
-    fechaInicio: input.fechaInicio,
-    fechaFin: input.fechaFin,
-    codigoAcceso: generarCodigoProyecto(input.nombre),
-  }
+  const proyecto = await fetchJson<ApiProyecto>('/api/proyectos', {
+    method: 'POST',
+    body: JSON.stringify({
+      nombre: input.nombre.trim(),
+      descripcion: input.descripcion.trim(),
+      fechaInicio: `${input.fechaInicio}T00:00:00`,
+      fechaFin: `${input.fechaFin}T00:00:00`,
+    }),
+  })
 
-  const sprintInicial = crearSprintInicial(nuevoProject)
-
-  projectsDb = [...projectsDb, nuevoProject]
-  sprintsDb = [...sprintsDb, sprintInicial]
-
-  return Promise.resolve(clonar(nuevoProject))
+  return mapProyectoApi(proyecto)
 }
 
 export async function regenerarPortalAccessCode(

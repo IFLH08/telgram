@@ -117,6 +117,7 @@ export interface PortalTaskInput {
   personaAsignadaId: string
   fechaEntrega: string
   horasEstimadas: number
+  horasReales?: number
   puntosHistoria: number
   prioridad: PrioridadTareaPortal
   sprintId: string

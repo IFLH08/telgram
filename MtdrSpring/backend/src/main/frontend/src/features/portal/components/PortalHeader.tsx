@@ -44,7 +44,7 @@ const navigationItems: Array<{
     icon: <span className="text-xs font-bold">#</span>,
   },
   {
-    page: 'tequi',
+    page: 'dashboard',
     label: 'Dashboard',
     icon: <span className="text-xs font-bold">📊</span>,
   },
@@ -110,7 +110,7 @@ export default function PortalHeader({
             <div className="flex min-w-0 flex-col gap-2">
               <button
                 type="button"
-                onClick={() => onNavigate('tequi')}
+                onClick={() => onNavigate('dashboard')}
                 className="group inline-flex w-fit flex-col text-left"
               >
                 <span

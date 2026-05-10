@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Badge, Boton } from '../../../components'
-import { TYPO, cx } from '../../../constants/colors'
+import { SELECT, TYPO, cx } from '../../../constants/colors'
 import {
   calcularSegundosRegistradosTask,
   formatearDuracionSegundos,
@@ -14,13 +14,16 @@ import {
   obtenerVariantePrioridadTask,
 } from '../selectors'
 import type { PortalTask } from '../types'
+import type { EstadoTareaPortal } from '../types'
 
 interface TaskPreviewModalProps {
   open: boolean
   task: PortalTask | null
   sessionBusy: boolean
+  canEditStatus?: boolean
   onClose: () => void
   onStartSession: () => void
+  onStatusChange?: (status: EstadoTareaPortal) => void
   onStopSession: () => void
 }
 
@@ -28,8 +31,10 @@ export default function TaskPreviewModal({
   open,
   task,
   sessionBusy,
+  canEditStatus = false,
   onClose,
   onStartSession,
+  onStatusChange,
   onStopSession,
 }: TaskPreviewModalProps) {
   const [now, setNow] = useState(() => new Date())
@@ -147,6 +152,21 @@ export default function TaskPreviewModal({
               </Badge>
               {activeSession && <Badge variante="info">Sesion activa</Badge>}
             </div>
+            {canEditStatus && onStatusChange && (
+              <select
+                aria-label="Cambiar estatus de la tarea"
+                value={task.estatus}
+                onChange={(event) =>
+                  onStatusChange(event.target.value as EstadoTareaPortal)
+                }
+                className={cx(SELECT.BASE, SELECT.DEFAULT, 'mt-3 h-10 text-[14px]')}
+              >
+                <option value="pendiente">Pendiente</option>
+                <option value="en_progreso">En progreso</option>
+                <option value="completada">Completada</option>
+                <option value="cancelada">Cancelada</option>
+              </select>
+            )}
           </div>
 
           <div className="rounded-[4px] border border-[#E2DDD6] bg-[#FBFAF8] px-3 py-3">

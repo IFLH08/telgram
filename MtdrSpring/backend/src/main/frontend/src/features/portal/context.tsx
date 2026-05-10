@@ -36,7 +36,11 @@ interface PortalState extends PortalSnapshot {
 interface PortalContextValue extends PortalState {
   createTask: (input: PortalTaskInput) => Promise<PortalTask>
   updateTask: (taskId: string, changes: Partial<PortalTaskInput>) => Promise<PortalTask>
-  updateTaskStatus: (taskId: string, status: PortalTask['estatus']) => Promise<PortalTask>
+  updateTaskStatus: (
+    taskId: string,
+    status: PortalTask['estatus'],
+    horasReales?: number,
+  ) => Promise<PortalTask>
   startTaskSession: (taskId: string, userId: string) => Promise<PortalTask>
   stopTaskSession: (taskId: string, userId: string) => Promise<PortalTask>
   deleteTask: (taskId: string) => Promise<void>
@@ -97,8 +101,8 @@ export function PortalProvider({ children }: { children: ReactNode }) {
   )
 
   const updateTaskStatus = useCallback(
-    async (taskId: string, status: PortalTask['estatus']) => {
-      const task = await actualizarPortalTaskStatus(taskId, status)
+    async (taskId: string, status: PortalTask['estatus'], horasReales?: number) => {
+      const task = await actualizarPortalTaskStatus(taskId, status, horasReales)
       await refreshSnapshot()
       return task
     },
