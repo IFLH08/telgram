@@ -2,6 +2,7 @@ package com.springboot.MyTodoList.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.springboot.MyTodoList.dto.DashboardSprintDeveloperMetricDTO;
 import com.springboot.MyTodoList.model.EstadoTarea;
 import com.springboot.MyTodoList.model.Prioridad;
 import com.springboot.MyTodoList.model.Rol;
@@ -23,8 +24,16 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -45,14 +54,19 @@ public class ConversationalBotService {
     private final PrioridadRepository prioridadRepository;
     private final RolRepository rolRepository;
     private final SprintRepository sprintRepository;
+    private final DashboardMetricsService dashboardMetricsService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final String BTN_DEVELOPER_TASKS = "Tareas Developer";
+    private static final String BTN_KPI_TASKS = "KPI Tasks";
+    private static final String BTN_KPI_HOURS = "KPI Hours";
 
     public ConversationalBotService(TelegramClient telegramClient, DeepSeekService deepSeekService,
             SessionManager sessionManager, JsonExtractionHelper jsonHelper,
             TareaRepository tareaRepository, UsuarioRepository usuarioRepository,
             EstadoTareaRepository estadoTareaRepository, PrioridadRepository prioridadRepository,
-            RolRepository rolRepository, SprintRepository sprintRepository) {
+            RolRepository rolRepository, SprintRepository sprintRepository,
+            DashboardMetricsService dashboardMetricsService) {
         this.telegramClient = telegramClient;
         this.deepSeekService = deepSeekService;
         this.sessionManager = sessionManager;
@@ -63,13 +77,21 @@ public class ConversationalBotService {
         this.prioridadRepository = prioridadRepository;
         this.rolRepository = rolRepository;
         this.sprintRepository = sprintRepository;
+        this.dashboardMetricsService = dashboardMetricsService;
     }
 
     public void processMessage(Long chatId, String requestText) {
         SessionManager.UserSession session = sessionManager.getSession(chatId);
+        String normalizedText = requestText == null ? "" : requestText.trim();
+        String lowerText = normalizedText.toLowerCase(Locale.ROOT);
 
         if (session.getState() == SessionManager.State.WAITING_FOR_CONFIRMATION) {
             handleConfirmation(chatId, requestText, session);
+            return;
+        }
+
+        if (session.getState() == SessionManager.State.WAITING_FOR_REAL_HOURS) {
+            handleRealHoursInput(chatId, requestText, session);
             return;
         }
 
@@ -82,12 +104,14 @@ public class ConversationalBotService {
             ReplyKeyboardMarkup keyboardMarkup = ReplyKeyboardMarkup.builder()
                     .keyboardRow(
                             new KeyboardRow(BotLabels.LIST_ALL_ITEMS.getLabel(), BotLabels.ADD_NEW_ITEM.getLabel()))
+                    .keyboardRow(new KeyboardRow(BTN_DEVELOPER_TASKS, BTN_KPI_TASKS))
+                    .keyboardRow(new KeyboardRow(BTN_KPI_HOURS))
                     .keyboardRow(new KeyboardRow(BotLabels.SHOW_MAIN_SCREEN.getLabel(),
                             BotLabels.HIDE_MAIN_SCREEN.getLabel()))
                     .resizeKeyboard(true)
                     .build();
             BotHelper.sendMessageToTelegram(chatId,
-                    "¡Hola! Soy tu asistente de proyectos. Usa '/AddTask [descripción y horas]' o usa los botones del menú de abajo.",
+                    "Hola. Soy tu asistente de proyectos. Usa /AddTask [descripcion y horas], /tareas_desarrollador [nombre|id|username], /kpi_tasks o /kpi_hours.",
                     telegramClient, keyboardMarkup);
             return;
         }
@@ -110,6 +134,33 @@ public class ConversationalBotService {
             return;
         }
 
+        if (normalizedText.equalsIgnoreCase(BTN_DEVELOPER_TASKS) || lowerText.startsWith("/tareas_desarrollador")
+                || lowerText.startsWith("/developer_tasks")) {
+            handleDeveloperTasksCommand(chatId, normalizedText);
+            return;
+        }
+
+        if (lowerText.matches("^dev-\\d+-tareas$")) {
+            handleDeveloperButton(chatId, normalizedText);
+            return;
+        }
+
+        if (normalizedText.equalsIgnoreCase(BTN_KPI_TASKS) || lowerText.equals("/kpi_tasks")) {
+            handleKpiTasks(chatId);
+            return;
+        }
+
+        if (normalizedText.equalsIgnoreCase(BTN_KPI_HOURS) || lowerText.equals("/kpi_hours")) {
+            handleKpiHours(chatId);
+            return;
+        }
+
+        if (lowerText.equals("/kpis") || lowerText.equals("/kpi")) {
+            handleKpiTasks(chatId);
+            handleKpiHours(chatId);
+            return;
+        }
+
         if (requestText.contains("-INICIAR")) {
             handleMarcarIniciada(chatId, requestText);
             return;
@@ -120,7 +171,7 @@ public class ConversationalBotService {
             return;
         }
 
-        if (requestText.toLowerCase().startsWith("/addtask") || requestText.toLowerCase().startsWith("/additem")) {
+        if (lowerText.startsWith("/addtask") || lowerText.startsWith("/additem")) {
             sessionManager.clearSession(chatId);
             session = sessionManager.getSession(chatId);
             startAddProcess(chatId, requestText, session);
@@ -132,19 +183,320 @@ public class ConversationalBotService {
                 telegramClient, null);
     }
 
+    private void handleDeveloperTasksCommand(Long chatId, String requestText) {
+        String developerQuery = requestText
+                .replaceFirst("(?i)^/tareas_desarrollador\\s*", "")
+                .replaceFirst("(?i)^/developer_tasks\\s*", "")
+                .trim();
+
+        if (developerQuery.isBlank() || developerQuery.equalsIgnoreCase(BTN_DEVELOPER_TASKS)) {
+            sendDeveloperDirectory(chatId);
+            return;
+        }
+
+        Optional<Usuario> developer = resolveDeveloper(developerQuery);
+        if (developer.isEmpty()) {
+            BotHelper.sendMessageToTelegram(chatId,
+                    "No encontre ese desarrollador. Usa /tareas_desarrollador sin argumentos para ver la lista.",
+                    telegramClient, null);
+            return;
+        }
+
+        sendDeveloperTasks(chatId, developer.get());
+    }
+
+    private void handleDeveloperButton(Long chatId, String requestText) {
+        Matcher matcher = Pattern.compile("(?i)^dev-(\\d+)-tareas$").matcher(requestText.trim());
+        if (!matcher.matches()) {
+            sendDeveloperDirectory(chatId);
+            return;
+        }
+
+        Long developerId = Long.valueOf(matcher.group(1));
+        usuarioRepository.findById(developerId).ifPresentOrElse(
+                developer -> sendDeveloperTasks(chatId, developer),
+                () -> BotHelper.sendMessageToTelegram(chatId,
+                        "No encontre el desarrollador con ID " + developerId + ".", telegramClient, null));
+    }
+
+    private void sendDeveloperDirectory(Long chatId) {
+        List<Usuario> developers = usuarioRepository.findAll().stream()
+                .sorted(Comparator.comparing(Usuario::getNombre, String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toList());
+
+        if (developers.isEmpty()) {
+            BotHelper.sendMessageToTelegram(chatId, "No hay desarrolladores registrados.", telegramClient, null);
+            return;
+        }
+
+        ReplyKeyboardMarkup keyboardMarkup = ReplyKeyboardMarkup.builder()
+                .resizeKeyboard(true)
+                .oneTimeKeyboard(false)
+                .selective(true)
+                .build();
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        StringBuilder message = new StringBuilder("Desarrolladores disponibles:\n");
+        for (Usuario developer : developers) {
+            message.append("- ID ").append(developer.getIdUsuario()).append(": ")
+                    .append(developer.getNombre()).append(" (@").append(developer.getUsername()).append(")\n");
+
+            KeyboardRow row = new KeyboardRow();
+            row.add(developer.getNombre());
+            row.add("DEV-" + developer.getIdUsuario() + "-TAREAS");
+            keyboard.add(row);
+        }
+
+        KeyboardRow bottomRow = new KeyboardRow();
+        bottomRow.add(BotLabels.SHOW_MAIN_SCREEN.getLabel());
+        keyboard.add(bottomRow);
+        keyboardMarkup.setKeyboard(keyboard);
+
+        BotHelper.sendMessageToTelegram(chatId, message.toString(), telegramClient, keyboardMarkup);
+    }
+
+    private Optional<Usuario> resolveDeveloper(String developerQuery) {
+        String cleanedQuery = developerQuery.trim().replaceFirst("^@", "");
+        if (cleanedQuery.matches("\\d+")) {
+            return usuarioRepository.findById(Long.valueOf(cleanedQuery));
+        }
+
+        List<Usuario> matches = usuarioRepository
+                .findByNombreContainingIgnoreCaseOrUsernameContainingIgnoreCase(cleanedQuery, cleanedQuery);
+        return matches.stream()
+                .sorted(Comparator.comparing(Usuario::getNombre, String.CASE_INSENSITIVE_ORDER))
+                .findFirst();
+    }
+
+    private void sendDeveloperTasks(Long chatId, Usuario developer) {
+        List<Tarea> tasks = tareaRepository.findVisibleByUsuarioAsignado(developer.getIdUsuario());
+
+        if (tasks.isEmpty()) {
+            BotHelper.sendMessageToTelegram(chatId,
+                    "No hay tareas visibles para " + developer.getNombre() + ".", telegramClient, null);
+            return;
+        }
+
+        StringBuilder message = new StringBuilder();
+        message.append("Tareas de ").append(developer.getNombre()).append(" (@")
+                .append(developer.getUsername()).append("):\n");
+        for (Tarea task : tasks) {
+            message.append(formatTaskLine(task)).append("\n");
+        }
+        sendLongMessage(chatId, message.toString());
+    }
+
+    private String formatTaskLine(Tarea task) {
+        String sprintName = task.getSprint() != null ? task.getSprint().getNombre() : "Sin sprint";
+        String estado = task.getEstado() != null ? task.getEstado().getNombreEstado() : "Sin estado";
+        String estimatedHours = formatNumber(task.getHorasEstimadas());
+        String realHours = task.getHorasReales() != null ? formatNumber(task.getHorasReales()) : "pendiente";
+        return "- #" + task.getIdTarea() + " [" + sprintName + "] " + task.getNombre()
+                + " | " + estado + " | est: " + estimatedHours + "h | reales: " + realHours + "h";
+    }
+
+    private void handleKpiTasks(Long chatId) {
+        List<DashboardSprintDeveloperMetricDTO> metrics = dashboardMetricsService.getSprintDeveloperMetrics();
+        if (metrics.isEmpty()) {
+            BotHelper.sendMessageToTelegram(chatId, "No hay datos para KPI Tasks.", telegramClient, null);
+            return;
+        }
+
+        StringBuilder message = new StringBuilder("KPI Tasks completed by user/sprint\n");
+        appendGroupedKpi(message, metrics, true);
+        sendLongMessage(chatId, message.toString());
+    }
+
+    private void handleKpiHours(Long chatId) {
+        List<DashboardSprintDeveloperMetricDTO> metrics = dashboardMetricsService.getSprintDeveloperMetrics();
+        if (metrics.isEmpty()) {
+            BotHelper.sendMessageToTelegram(chatId, "No hay datos para KPI Hours.", telegramClient, null);
+            return;
+        }
+
+        StringBuilder message = new StringBuilder("KPI Total hours worked per user/sprint\n");
+        appendGroupedKpi(message, metrics, false);
+        sendLongMessage(chatId, message.toString());
+    }
+
+    private void appendGroupedKpi(StringBuilder message, List<DashboardSprintDeveloperMetricDTO> metrics,
+            boolean completedTasks) {
+        Map<String, List<DashboardSprintDeveloperMetricDTO>> bySprint = new LinkedHashMap<>();
+        for (DashboardSprintDeveloperMetricDTO metric : metrics) {
+            bySprint.computeIfAbsent(metric.getSprintName(), ignored -> new ArrayList<>()).add(metric);
+        }
+
+        bySprint.forEach((sprintName, sprintMetrics) -> {
+            message.append("\n").append(sprintName).append("\n");
+            sprintMetrics.stream()
+                    .sorted(Comparator.comparing(DashboardSprintDeveloperMetricDTO::getDeveloperName,
+                            String.CASE_INSENSITIVE_ORDER))
+                    .forEach(metric -> {
+                        message.append("- ").append(metric.getDeveloperName()).append(": ");
+                        if (completedTasks) {
+                            message.append(metric.getCompletedTasks()).append(" tasks");
+                        } else {
+                            message.append(formatNumber(metric.getRealHours())).append(" hours");
+                        }
+                        message.append("\n");
+                    });
+        });
+    }
+
+    private void handleRealHoursInput(Long chatId, String requestText, SessionManager.UserSession session) {
+        if (requestText != null && requestText.trim().equalsIgnoreCase("cancelar")) {
+            sessionManager.clearSession(chatId);
+            BotHelper.sendMessageToTelegram(chatId, "Cierre de tarea cancelado.", telegramClient, null);
+            return;
+        }
+
+        Double realHours = parseHours(requestText);
+        if (realHours == null || realHours <= 0) {
+            BotHelper.sendMessageToTelegram(chatId,
+                    "Ingresa un numero valido de horas reales. Ejemplo: 3 o 2.5. Escribe cancelar para salir.",
+                    telegramClient, null);
+            return;
+        }
+
+        Long taskId = session.getPendingTaskId();
+        if (taskId == null) {
+            sessionManager.clearSession(chatId);
+            BotHelper.sendMessageToTelegram(chatId, "No encontre una tarea pendiente de cierre.", telegramClient, null);
+            return;
+        }
+
+        try {
+            Tarea task = tareaRepository.findById(taskId).orElse(null);
+            if (task == null) {
+                sessionManager.clearSession(chatId);
+                BotHelper.sendMessageToTelegram(chatId, "No se encontro la tarea con ID " + taskId + ".",
+                        telegramClient, null);
+                return;
+            }
+
+            EstadoTarea estado = estadoTareaRepository.findByNombreEstado("Completada");
+            if (estado == null) {
+                throw new IllegalStateException("No existe el estado Completada en la base de datos.");
+            }
+
+            task.setEstado(estado);
+            task.setHorasReales(realHours);
+            tareaRepository.save(task);
+            sessionManager.clearSession(chatId);
+
+            BotHelper.sendMessageToTelegram(chatId,
+                    "Tarea " + taskId + " marcada como TERMINADA con " + formatNumber(realHours) + " horas reales.",
+                    telegramClient, null);
+            handleListAllTareas(chatId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            sessionManager.clearSession(chatId);
+            BotHelper.sendMessageToTelegram(chatId, "Error al guardar horas reales: " + e.getMessage(), telegramClient,
+                    null);
+        }
+    }
+
+    private Double parseHours(String text) {
+        if (text == null) {
+            return null;
+        }
+        Matcher matcher = Pattern.compile("(\\d+(?:[\\.,]\\d+)?)").matcher(text);
+        if (!matcher.find()) {
+            return null;
+        }
+        return Double.valueOf(matcher.group(1).replace(',', '.'));
+    }
+
+    private boolean isPendingStatus(String status) {
+        if (status == null) {
+            return false;
+        }
+
+        String value = status.trim().toUpperCase(Locale.ROOT);
+        return "PENDIENTE".equals(value) || "PENDING".equals(value);
+    }
+
+    private boolean isInProgressStatus(String status) {
+        if (status == null) {
+            return false;
+        }
+
+        String value = status.trim().toUpperCase(Locale.ROOT);
+        return "EN PROGRESO".equals(value) || "EN_PROGRESO".equals(value) || "IN PROGRESS".equals(value);
+    }
+
+    private boolean isCompletedStatus(String status) {
+        if (status == null) {
+            return false;
+        }
+
+        String value = status.trim().toUpperCase(Locale.ROOT);
+        return "COMPLETADA".equals(value) || "COMPLETADO".equals(value) || "COMPLETED".equals(value) || "DONE".equals(value);
+    }
+
+    private Prioridad resolvePrioridad(Prioridad draftPriority) {
+        Long priorityId = draftPriority == null ? null : draftPriority.getIdPrioridad();
+
+        if (priorityId != null) {
+            Optional<Prioridad> byId = prioridadRepository.findById(priorityId);
+            if (byId.isPresent()) {
+                return byId.get();
+            }
+        }
+
+        String priorityName;
+        if (priorityId != null && priorityId == 1L) {
+            priorityName = "Baja";
+        } else if (priorityId != null && priorityId == 3L) {
+            priorityName = "Alta";
+        } else {
+            priorityName = "Media";
+        }
+
+        return prioridadRepository.findByNombre(priorityName);
+    }
+
+    private String formatNumber(Double value) {
+        if (value == null) {
+            return "0";
+        }
+        if (Math.floor(value) == value) {
+            return String.valueOf(value.longValue());
+        }
+        return String.format(Locale.US, "%.1f", value);
+    }
+
+    private void sendLongMessage(Long chatId, String text) {
+        int maxLength = 3600;
+        String remaining = text;
+        while (remaining.length() > maxLength) {
+            int splitAt = remaining.lastIndexOf('\n', maxLength);
+            if (splitAt <= 0) {
+                splitAt = maxLength;
+            }
+            BotHelper.sendMessageToTelegram(chatId, remaining.substring(0, splitAt), telegramClient, null);
+            remaining = remaining.substring(splitAt).trim();
+        }
+        if (!remaining.isBlank()) {
+            BotHelper.sendMessageToTelegram(chatId, remaining, telegramClient, null);
+        }
+    }
+
     private Usuario getOrCreateUser(Long chatId) {
         return usuarioRepository.findByTelegramId(chatId).orElseGet(() -> {
             try {
-                Usuario newUser = new Usuario();
-                newUser.setTelegramId(chatId);
-                newUser.setNombre("Telegram User " + chatId);
-                newUser.setUsername("tg_" + chatId);
-                newUser.setFechaRegistro(OffsetDateTime.now());
-                Rol rol = rolRepository.findByNombreRol("USER");
+            Usuario newUser = new Usuario();
+            newUser.setIdUsuario(usuarioRepository.findMaxIdUsuario() + 1);
+            newUser.setTelegramId(chatId);
+            newUser.setNombre("Telegram User " + chatId);
+            newUser.setUsername("tg_" + chatId);
+            newUser.setFechaRegistro(OffsetDateTime.now());
+                Rol rol = rolRepository.findByNombreRol("DESARROLLADOR");
                 if (rol == null) {
-                    rol = new Rol();
-                    rol.setNombreRol("USER");
-                    rol = rolRepository.save(rol);
+                    rol = rolRepository.findByNombreRol("developer");
+                }
+                if (rol == null) {
+                    rol = rolRepository.findByNombreRol("Desarrollador");
                 }
                 newUser.setRol(rol);
                 return usuarioRepository.save(newUser);
@@ -173,10 +525,10 @@ public class ConversationalBotService {
                     .build();
 
             List<Tarea> activas = allItems.stream().filter(
-                    t -> t.getEstado() != null && !t.getEstado().getNombreEstado().equalsIgnoreCase("COMPLETED"))
+                    t -> t.getEstado() != null && !isCompletedStatus(t.getEstado().getNombreEstado()))
                     .collect(Collectors.toList());
             List<Tarea> terminadas = allItems.stream()
-                    .filter(t -> t.getEstado() != null && t.getEstado().getNombreEstado().equalsIgnoreCase("COMPLETED"))
+                    .filter(t -> t.getEstado() != null && isCompletedStatus(t.getEstado().getNombreEstado()))
                     .collect(Collectors.toList());
 
             if (activas.isEmpty()) {
@@ -196,9 +548,9 @@ public class ConversationalBotService {
                 String nombre = item.getNombre() != null ? item.getNombre() : "Sin nombre";
                 currentRow.add(
                         "ID: " + item.getIdTarea() + " - " + (nombre.length() > 20 ? nombre.substring(0, 20) : nombre));
-                if (item.getEstado().getNombreEstado().equalsIgnoreCase("PENDING")) {
+                if (isPendingStatus(item.getEstado().getNombreEstado())) {
                     currentRow.add(item.getIdTarea() + "-INICIAR");
-                } else if (item.getEstado().getNombreEstado().equalsIgnoreCase("IN PROGRESS")) {
+                } else if (isInProgressStatus(item.getEstado().getNombreEstado())) {
                     currentRow.add(item.getIdTarea() + "-TERMINAR");
                 }
                 keyboard.add(currentRow);
@@ -229,11 +581,9 @@ public class ConversationalBotService {
                         null);
                 return;
             }
-            EstadoTarea estado = estadoTareaRepository.findByNombreEstado("IN PROGRESS");
+            EstadoTarea estado = estadoTareaRepository.findByNombreEstado("En progreso");
             if (estado == null) {
-                estado = new EstadoTarea();
-                estado.setNombreEstado("IN PROGRESS");
-                estado = estadoTareaRepository.save(estado);
+                throw new IllegalStateException("No existe el estado En progreso en la base de datos.");
             }
             t.setEstado(estado);
             tareaRepository.save(t);
@@ -255,18 +605,12 @@ public class ConversationalBotService {
                         null);
                 return;
             }
-            // Falta requerir las horas reales, por el momento pondremos las estimadas
-            EstadoTarea estado = estadoTareaRepository.findByNombreEstado("COMPLETED");
-            if (estado == null) {
-                estado = new EstadoTarea();
-                estado.setNombreEstado("COMPLETED");
-                estado = estadoTareaRepository.save(estado);
-            }
-            t.setEstado(estado);
-            t.setHorasReales(t.getHorasEstimadas()); // Temporal, el requerimiento pide interactuar y pedirlas.
-            tareaRepository.save(t);
-            BotHelper.sendMessageToTelegram(chatId, "✅ Tarea " + id + " marcada como TERMINADA.", telegramClient, null);
-            handleListAllTareas(chatId);
+            SessionManager.UserSession session = sessionManager.getSession(chatId);
+            session.setState(SessionManager.State.WAITING_FOR_REAL_HOURS);
+            session.setPendingTaskId(id);
+            BotHelper.sendMessageToTelegram(chatId,
+                    "Ingresa las horas reales trabajadas para cerrar la tarea " + id + ". Ejemplo: 2.5",
+                    telegramClient, null);
         } catch (Exception e) {
             e.printStackTrace();
             BotHelper.sendMessageToTelegram(chatId, "❌ Error al terminar tarea: " + e.getMessage(), telegramClient,
@@ -431,11 +775,12 @@ public class ConversationalBotService {
                     return;
                 }
 
-                EstadoTarea estado = estadoTareaRepository.findByNombreEstado("PENDING");
+                EstadoTarea estado = estadoTareaRepository.findByNombreEstado("Pendiente");
                 if (estado == null) {
-                    estado = new EstadoTarea();
-                    estado.setNombreEstado("PENDING");
-                    estado = estadoTareaRepository.save(estado);
+                    BotHelper.sendMessageToTelegram(chatId,
+                            "No existe el estado Pendiente en la base de datos.", telegramClient, null);
+                    sessionManager.clearSession(chatId);
+                    return;
                 }
 
                 // Obtener el sprint activo (el primero disponible)
@@ -449,17 +794,20 @@ public class ConversationalBotService {
 
                 StringBuilder msgSuccess = new StringBuilder("✅ Hecho. Tareas registradas exitosamente:\n");
 
+                Long nextTaskId = tareaRepository.findMaxIdTarea() + 1;
                 for (Tarea d : drafts) {
+                    d.setIdTarea(nextTaskId++);
                     d.setEstado(estado);
-                    String pName = "Prioridad Nivel " + d.getPrioridad().getIdPrioridad();
-                    Prioridad p = prioridadRepository.findByNombre(pName);
+                    Prioridad p = resolvePrioridad(d.getPrioridad());
                     if (p == null) {
-                        p = new Prioridad();
-                        p.setNombre(pName);
-                        p = prioridadRepository.save(p);
+                        BotHelper.sendMessageToTelegram(chatId,
+                                "No pude resolver la prioridad de una tarea. Usa prioridad baja, media o alta.",
+                                telegramClient, null);
+                        sessionManager.clearSession(chatId);
+                        return;
                     }
                     d.setPrioridad(p);
-                    d.setFechaCreacion(OffsetDateTime.now());
+                    d.setFechaCreacion(LocalDateTime.now());
                     d.setUsuarioAsignado(user);
                     d.setSprint(sprintActivo);
 

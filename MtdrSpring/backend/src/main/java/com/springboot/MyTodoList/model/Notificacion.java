@@ -5,7 +5,7 @@ import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "NOTIFICACIONES")
+@Table(name = "NOTIFICACIONES", schema = "EQUIPO63")
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Notificacion {
     @Id

@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
     in the autonomous database
  */
 @Entity
-@Table(name = "TODOITEM")
+@Table(name = "TODOITEM", schema = "EQUIPO63")
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class ToDoItem {
     @Id

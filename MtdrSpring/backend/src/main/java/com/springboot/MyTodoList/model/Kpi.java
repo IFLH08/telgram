@@ -1,10 +1,11 @@
 package com.springboot.MyTodoList.model;
 
 import jakarta.persistence.*;
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "HISTORIAL_ACCIONES")
+@Table(name = "HISTORIAL_ACCIONES", schema = "EQUIPO63")
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Kpi {
     @Id
@@ -26,6 +27,9 @@ public class Kpi {
 
     @Column(name = "ACCION", length = 50)
     private String accion;
+
+    @Column(name = "FECHA_EVENTO")
+    private OffsetDateTime fechaEvento = OffsetDateTime.now();
 
     public Kpi() {
     }
@@ -68,5 +72,13 @@ public class Kpi {
 
     public void setAccion(String accion) {
         this.accion = accion;
+    }
+
+    public OffsetDateTime getFechaEvento() {
+        return fechaEvento;
+    }
+
+    public void setFechaEvento(OffsetDateTime fechaEvento) {
+        this.fechaEvento = fechaEvento;
     }
 }

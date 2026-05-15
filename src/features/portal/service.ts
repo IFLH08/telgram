@@ -499,6 +499,226 @@ let tasksDb = clonar(initialTasks)
 let notificationsDb = clonar(initialNotifications)
 let membershipsDb = clonar(initialMemberships)
 
+type ApiProyecto = {
+  idProyecto: number
+  nombre: string
+  descripcion?: string
+  fechaInicio?: string
+  fechaFin?: string
+  codigoAcceso?: string
+}
+
+type ApiSprint = {
+  idSprint: number
+  nombre: string
+  fechaInicio?: string
+  fechaFin?: string
+  proyecto?: ApiProyecto
+}
+
+type ApiUsuario = {
+  idUsuario: number
+  nombre: string
+}
+
+type ApiEstadoTarea = {
+  idEstado?: number
+  nombreEstado: string
+}
+
+type ApiPrioridad = {
+  idPrioridad?: number
+  nombre: string
+}
+
+type ApiTarea = {
+  idTarea: number
+  nombre: string
+  descripcion?: string
+  fechaCreacion?: string
+  fechaEntrega?: string
+  horasEstimadas?: number
+  horasReales?: number
+  puntosHistoria?: number
+  estado?: ApiEstadoTarea
+  sprint?: ApiSprint
+  usuarioAsignado?: ApiUsuario
+  prioridad?: ApiPrioridad
+  eliminada?: boolean
+  fechaEliminacion?: string
+}
+
+async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+    ...options,
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    let message = `Error al consumir ${url} (${response.status}).`
+
+    if (errorText) {
+      try {
+        const errorJson = JSON.parse(errorText) as { error?: string; message?: string }
+        message = errorJson.error ?? errorJson.message ?? message
+      } catch {
+        message = errorText
+      }
+    }
+
+    throw new Error(message)
+  }
+
+  if (response.status === 204) {
+    return undefined as T
+  }
+
+  const text = await response.text()
+  return (text ? JSON.parse(text) : undefined) as T
+}
+
+function fechaApiComoDia(fecha?: string) {
+  return fecha ? fecha.split('T')[0] : formatoFecha(new Date())
+}
+
+function estadoDesdeApi(estado?: ApiEstadoTarea): PortalTask['estatus'] {
+  const nombre = estado?.nombreEstado?.toLowerCase() ?? 'pending'
+
+  if (nombre.includes('progress') || nombre.includes('progreso')) return 'en_progreso'
+  if (nombre.includes('complete') || nombre.includes('done') || nombre.includes('complet')) return 'completada'
+  if (nombre.includes('cancel')) return 'cancelada'
+  return 'pendiente'
+}
+
+function estadoParaApi(estatus: PortalTask['estatus']): ApiEstadoTarea {
+  const nombreEstado = {
+    pendiente: 'PENDING',
+    en_progreso: 'IN PROGRESS',
+    completada: 'COMPLETED',
+    cancelada: 'CANCELLED',
+  }[estatus]
+
+  return { nombreEstado }
+}
+
+function prioridadDesdeApi(prioridad?: ApiPrioridad): PortalTask['prioridad'] {
+  const nombre = prioridad?.nombre?.toLowerCase() ?? 'media'
+
+  if (nombre.includes('alta') || nombre.includes('high') || nombre.includes('3')) return 'alta'
+  if (nombre.includes('baja') || nombre.includes('low') || nombre.includes('1')) return 'baja'
+  return 'media'
+}
+
+function prioridadParaApi(prioridad: PortalTask['prioridad']): ApiPrioridad {
+  return { nombre: prioridad }
+}
+
+function mapProyectoApi(proyecto: ApiProyecto): PortalProject {
+  return {
+    id: String(proyecto.idProyecto),
+    nombre: proyecto.nombre,
+    descripcion: proyecto.descripcion ?? '',
+    fechaInicio: fechaApiComoDia(proyecto.fechaInicio),
+    fechaFin: fechaApiComoDia(proyecto.fechaFin),
+    codigoAcceso: proyecto.codigoAcceso ?? '',
+  }
+}
+
+function mapSprintApi(sprint: ApiSprint): PortalSprint {
+  const proyecto = sprint.proyecto
+
+  return {
+    id: String(sprint.idSprint),
+    nombre: sprint.nombre,
+    fechaInicio: fechaApiComoDia(sprint.fechaInicio),
+    fechaFin: fechaApiComoDia(sprint.fechaFin),
+    proyectoId: proyecto ? String(proyecto.idProyecto) : '',
+    proyectoNombre: proyecto?.nombre ?? 'Sin proyecto',
+  }
+}
+
+function mapTareaApi(tarea: ApiTarea): PortalTask {
+  const sprint = tarea.sprint ? mapSprintApi(tarea.sprint) : undefined
+  const personaId = tarea.usuarioAsignado?.idUsuario
+    ? String(tarea.usuarioAsignado.idUsuario)
+    : 'sin-asignar'
+
+  return {
+    id: String(tarea.idTarea),
+    nombre: tarea.nombre,
+    descripcion: tarea.descripcion ?? '',
+    fechaCreacion: tarea.fechaCreacion ?? new Date().toISOString(),
+    fechaEntrega: fechaApiComoDia(tarea.fechaEntrega),
+    horasEstimadas: tarea.horasEstimadas ?? 0,
+    puntosHistoria: tarea.puntosHistoria ?? 0,
+    estatus: estadoDesdeApi(tarea.estado),
+    sprintId: sprint?.id ?? '',
+    sprintNombre: sprint?.nombre ?? 'Sin sprint',
+    sprintEsActual: sprint ? esSprintActual(sprint) : false,
+    proyectoId: sprint?.proyectoId ?? '',
+    proyectoNombre: sprint?.proyectoNombre ?? 'Sin proyecto',
+    personaAsignadaId: personaId,
+    personaAsignadaNombre: tarea.usuarioAsignado?.nombre ?? 'Sin asignar',
+    prioridad: prioridadDesdeApi(tarea.prioridad),
+    eliminada: tarea.eliminada ?? false,
+    fechaEliminacion: tarea.fechaEliminacion,
+    horasReales: tarea.horasReales ?? 0,
+    sesionesTrabajo: [],
+    actualizadoEn: tarea.fechaCreacion ?? new Date().toISOString(),
+  }
+}
+
+function payloadTareaApi(input: PortalTaskInput): Partial<ApiTarea> {
+  const sprintId = Number(input.sprintId)
+  const usuarioAsignadoId = Number(input.personaAsignadaId)
+
+  if (!input.sprintId.trim() || !Number.isFinite(sprintId) || sprintId <= 0) {
+    throw new Error('El sprint seleccionado no tiene un ID valido para guardar en la base de datos.')
+  }
+
+  if (!input.personaAsignadaId.trim() || !Number.isFinite(usuarioAsignadoId) || usuarioAsignadoId <= 0) {
+    throw new Error('El responsable seleccionado no tiene un ID valido para guardar en la base de datos.')
+  }
+
+  return {
+    nombre: input.nombre.trim(),
+    descripcion: input.descripcion.trim(),
+    fechaEntrega: `${input.fechaEntrega}T00:00:00`,
+    horasEstimadas: input.horasEstimadas,
+    horasReales: input.horasReales,
+    puntosHistoria: input.puntosHistoria,
+    estado: estadoParaApi(input.estatus),
+    prioridad: prioridadParaApi(input.prioridad),
+    sprint: { idSprint: sprintId, nombre: '' },
+    usuarioAsignado: {
+      idUsuario: usuarioAsignadoId,
+      nombre: '',
+    },
+    eliminada: false,
+  }
+}
+
+async function obtenerPortalSnapshotApi(): Promise<PortalSnapshot> {
+  const [projectsApi, sprintsApi, tasksApi] = await Promise.all([
+    fetchJson<ApiProyecto[]>('/api/proyectos'),
+    fetchJson<ApiSprint[]>('/api/sprints'),
+    fetchJson<ApiTarea[]>('/api/tareas'),
+  ])
+
+  return {
+    projects: projectsApi.map(mapProyectoApi),
+    sprints: sprintsApi.map(mapSprintApi),
+    tasks: tasksApi.filter((task) => !task.eliminada).map(mapTareaApi),
+    notifications: clonar(notificationsDb),
+    memberships: clonar(membershipsDb),
+  }
+}
+
 function snapshotActual(): PortalSnapshot {
   return {
     projects: clonar(projectsDb),
@@ -510,10 +730,26 @@ function snapshotActual(): PortalSnapshot {
 }
 
 export async function obtenerPortalSnapshot(): Promise<PortalSnapshot> {
-  return Promise.resolve(snapshotActual())
+  try {
+    return await obtenerPortalSnapshotApi()
+  } catch (error) {
+    console.warn('Usando datos mock porque no se pudo cargar el snapshot real.', error)
+    return Promise.resolve(snapshotActual())
+  }
 }
 
 export async function crearPortalTask(
+  input: PortalTaskInput,
+): Promise<PortalTask> {
+  const tarea = await fetchJson<ApiTarea>('/api/tareas', {
+    method: 'POST',
+    body: JSON.stringify(payloadTareaApi(input)),
+  })
+
+  return mapTareaApi(tarea)
+}
+
+async function crearPortalTaskMock(
   input: PortalTaskInput,
 ): Promise<PortalTask> {
   const sprint = sprintsDb.find((item) => item.id === input.sprintId)
@@ -565,6 +801,38 @@ export async function crearPortalTask(
 }
 
 export async function actualizarPortalTask(
+  taskId: string,
+  cambios: Partial<PortalTaskInput>,
+): Promise<PortalTask> {
+  const snapshot = await obtenerPortalSnapshot()
+  const actual = snapshot.tasks.find((task) => task.id === taskId)
+
+  if (!actual) {
+    throw new Error('La tarea no existe.')
+  }
+
+  const payload = payloadTareaApi({
+    nombre: cambios.nombre ?? actual.nombre,
+    descripcion: cambios.descripcion ?? actual.descripcion,
+    fechaEntrega: cambios.fechaEntrega ?? actual.fechaEntrega,
+    horasEstimadas: cambios.horasEstimadas ?? actual.horasEstimadas,
+    horasReales: cambios.horasReales ?? actual.horasReales,
+    puntosHistoria: cambios.puntosHistoria ?? actual.puntosHistoria,
+    estatus: cambios.estatus ?? actual.estatus,
+    prioridad: cambios.prioridad ?? actual.prioridad,
+    sprintId: cambios.sprintId ?? actual.sprintId,
+    personaAsignadaId: cambios.personaAsignadaId ?? actual.personaAsignadaId,
+  })
+
+  const tarea = await fetchJson<ApiTarea>(`/api/tareas/${taskId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+
+  return mapTareaApi(tarea)
+}
+
+async function actualizarPortalTaskMock(
   taskId: string,
   cambios: Partial<PortalTaskInput>,
 ): Promise<PortalTask> {
@@ -637,6 +905,18 @@ export async function actualizarPortalTask(
 export async function actualizarPortalTaskStatus(
   taskId: string,
   estatus: PortalTask['estatus'],
+  horasReales?: number,
+): Promise<PortalTask> {
+  return actualizarPortalTask(taskId, {
+    estatus,
+    ...(horasReales === undefined ? {} : { horasReales }),
+  })
+}
+
+async function actualizarPortalTaskStatusMock(
+  taskId: string,
+  estatus: PortalTask['estatus'],
+  horasReales?: number,
 ): Promise<PortalTask> {
   const actual = tasksDb.find((task) => task.id === taskId)
 
@@ -649,6 +929,7 @@ export async function actualizarPortalTaskStatus(
   const actualizada: PortalTask = {
     ...actual,
     estatus,
+    horasReales: horasReales ?? actual.horasReales,
     actualizadoEn: ahoraActual,
   }
 
@@ -739,6 +1020,12 @@ export async function detenerPortalTaskSession(
 }
 
 export async function eliminarPortalTask(taskId: string): Promise<void> {
+  await fetchJson<void>(`/api/tareas/${taskId}`, {
+    method: 'DELETE',
+  })
+}
+
+async function eliminarPortalTaskMock(taskId: string): Promise<void> {
   tasksDb = tasksDb.map((task) =>
     task.id === taskId
       ? {
@@ -757,21 +1044,17 @@ export async function eliminarPortalTask(taskId: string): Promise<void> {
 export async function crearPortalProject(
   input: PortalProjectInput,
 ): Promise<PortalProject> {
-  const nuevoProject: PortalProject = {
-    id: siguienteId('proyecto'),
-    nombre: input.nombre.trim(),
-    descripcion: input.descripcion.trim(),
-    fechaInicio: input.fechaInicio,
-    fechaFin: input.fechaFin,
-    codigoAcceso: generarCodigoProyecto(input.nombre),
-  }
+  const proyecto = await fetchJson<ApiProyecto>('/api/proyectos', {
+    method: 'POST',
+    body: JSON.stringify({
+      nombre: input.nombre.trim(),
+      descripcion: input.descripcion.trim(),
+      fechaInicio: `${input.fechaInicio}T00:00:00`,
+      fechaFin: `${input.fechaFin}T00:00:00`,
+    }),
+  })
 
-  const sprintInicial = crearSprintInicial(nuevoProject)
-
-  projectsDb = [...projectsDb, nuevoProject]
-  sprintsDb = [...sprintsDb, sprintInicial]
-
-  return Promise.resolve(clonar(nuevoProject))
+  return mapProyectoApi(proyecto)
 }
 
 export async function regenerarPortalAccessCode(

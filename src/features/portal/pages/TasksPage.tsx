@@ -65,6 +65,7 @@ function createEmptyTaskForm(
     personaAsignadaId: assigneeId,
     fechaEntrega: '',
     horasEstimadas: 1,
+    horasReales: undefined,
     puntosHistoria: 1,
     prioridad: 'media',
     sprintId,
@@ -263,6 +264,22 @@ function TaskModal({
             />
           </div>
 
+          {value.estatus === 'completada' && (
+            <div>
+              <label htmlFor="task-real-hours" className={TYPO.LABEL}>Real Hours</label>
+              <input
+                id="task-real-hours"
+                type="number"
+                min="0.01"
+                step="0.25"
+                value={value.horasReales ?? ''}
+                onChange={(event) => onChange('horasReales', Number(event.target.value))}
+                className={cx(SELECT.BASE, SELECT.DEFAULT, 'mt-2')}
+                placeholder="Ejemplo: 6.5"
+              />
+            </div>
+          )}
+
           <div>
             <label htmlFor="task-story-points" className={TYPO.LABEL}>Story Points</label>
             <input
@@ -283,6 +300,96 @@ function TaskModal({
           </Boton>
           <Boton onClick={onSave} disabled={saving}>
             {saving ? 'Guardando...' : mode === 'create' ? 'Crear tarea' : 'Guardar cambios'}
+          </Boton>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CompleteTaskModal({
+  error,
+  horas,
+  open,
+  saving,
+  task,
+  onChangeHoras,
+  onClose,
+  onConfirm,
+}: {
+  error: string | null
+  horas: string
+  open: boolean
+  saving: boolean
+  task: PortalTask | null
+  onChangeHoras: (value: string) => void
+  onClose: () => void
+  onConfirm: () => void
+}) {
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose, open])
+
+  if (!open || !task) {
+    return null
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="complete-task-modal-title"
+        className="w-full max-w-lg rounded-[4px] border border-[#E2DDD6] bg-white p-6 shadow-xl"
+      >
+        <div className="space-y-2">
+          <h2 id="complete-task-modal-title" className={TYPO.H3}>
+            Registrar horas reales
+          </h2>
+          <p className={TYPO.BODY_MUTED}>
+            Antes de marcar la tarea como completada, registra las horas reales
+            que te tomo realizarla.
+          </p>
+          <p className={cx(TYPO.BODY, 'font-medium')}>{task.nombre}</p>
+        </div>
+
+        <div className="mt-5">
+          <label htmlFor="complete-task-real-hours" className={TYPO.LABEL}>
+            Horas reales
+          </label>
+          <input
+            id="complete-task-real-hours"
+            type="number"
+            min="0.01"
+            step="0.25"
+            value={horas}
+            onChange={(event) => onChangeHoras(event.target.value)}
+            className={cx(SELECT.BASE, SELECT.DEFAULT, 'mt-2')}
+            placeholder="Ejemplo: 6.5"
+            autoFocus
+          />
+          {error && (
+            <p className="mt-2 text-[14px] leading-5 text-[#7D3833]">{error}</p>
+          )}
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <Boton variante="secundario" onClick={onClose} disabled={saving}>
+            Cancelar
+          </Boton>
+          <Boton onClick={onConfirm} disabled={saving}>
+            {saving ? 'Guardando...' : 'Marcar completada'}
           </Boton>
         </div>
       </div>
@@ -329,6 +436,10 @@ export default function TasksPage() {
   const [editingTask, setEditingTask] = useState<PortalTask | null>(null)
   const [previewTaskId, setPreviewTaskId] = useState<string | null>(null)
   const [sessionBusy, setSessionBusy] = useState(false)
+  const [completionTask, setCompletionTask] = useState<PortalTask | null>(null)
+  const [completionHours, setCompletionHours] = useState('')
+  const [completionError, setCompletionError] = useState<string | null>(null)
+  const [completionSaving, setCompletionSaving] = useState(false)
 
   const [form, setForm] = useState<TaskFormState>(() => {
     const defaultProjectId = visibleProjects[0]?.id ?? ''
@@ -493,6 +604,7 @@ export default function TasksPage() {
       personaAsignadaId: task.personaAsignadaId,
       fechaEntrega: task.fechaEntrega,
       horasEstimadas: task.horasEstimadas,
+      horasReales: task.horasReales,
       puntosHistoria: task.puntosHistoria,
       prioridad: task.prioridad,
       sprintId: task.sprintId,
@@ -544,6 +656,13 @@ export default function TasksPage() {
       return 'Las horas estimadas y los puntos de historia deben ser mayores a cero.'
     }
 
+    if (
+      form.estatus === 'completada' &&
+      (!form.horasReales || form.horasReales <= 0)
+    ) {
+      return 'Para completar la tarea debes registrar horas reales mayores a cero.'
+    }
+
     return null
   }
 
@@ -565,6 +684,7 @@ export default function TasksPage() {
       personaAsignadaId: form.personaAsignadaId,
       fechaEntrega: form.fechaEntrega,
       horasEstimadas: form.horasEstimadas,
+      horasReales: form.estatus === 'completada' ? form.horasReales : undefined,
       puntosHistoria: form.puntosHistoria,
       prioridad: form.prioridad,
       sprintId: form.sprintId,
@@ -617,6 +737,7 @@ export default function TasksPage() {
         personaAsignadaId: aiForm.personaAsignadaId,
         fechaEntrega: borrador.fechaEntrega,
         horasEstimadas: borrador.horasEstimadas,
+        horasReales: undefined,
         puntosHistoria: borrador.puntosHistoria,
         prioridad: borrador.prioridad,
         sprintId: aiForm.sprintId,
@@ -649,11 +770,80 @@ export default function TasksPage() {
     }
   }
 
-  const handleStatusChange = async (taskId: string, status: EstadoTareaPortal) => {
+  const openCompleteTask = (task: PortalTask) => {
+    setError(null)
+    setMessage(null)
+    setCompletionError(null)
+    setCompletionTask(task)
+    setCompletionHours(task.horasReales > 0 ? String(task.horasReales) : '')
+  }
+
+  const closeCompleteTask = () => {
+    if (completionSaving) {
+      return
+    }
+
+    setCompletionTask(null)
+    setCompletionHours('')
+    setCompletionError(null)
+  }
+
+  const canDeveloperEditTaskStatus = (task: PortalTask) => {
+    return (
+      !isAdmin &&
+      usuarioActual?.rol === 'developer' &&
+      task.personaAsignadaId === usuarioActual.id
+    )
+  }
+
+  const handleCompleteTask = async () => {
+    if (!completionTask) {
+      return
+    }
+
+    const horasReales = Number(completionHours)
+
+    if (!Number.isFinite(horasReales) || horasReales <= 0) {
+      setCompletionError('Ingresa un numero de horas reales mayor a cero.')
+      return
+    }
+
+    setCompletionSaving(true)
+    setCompletionError(null)
     setError(null)
 
     try {
-      await updateTaskStatus(taskId, status)
+      await updateTaskStatus(completionTask.id, 'completada', horasReales)
+      setMessage('La tarea fue marcada como completada y las horas reales fueron registradas.')
+      setCompletionTask(null)
+      setCompletionHours('')
+    } catch (caughtError) {
+      setCompletionError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'No se pudo completar la tarea.',
+      )
+    } finally {
+      setCompletionSaving(false)
+    }
+  }
+
+  const handleStatusChange = async (task: PortalTask, status: EstadoTareaPortal) => {
+    if (!canDeveloperEditTaskStatus(task)) {
+      setError('Solo puedes actualizar el estatus de tus tareas asignadas.')
+      return
+    }
+
+    if (status === 'completada' && task.estatus !== 'completada') {
+      setPreviewTaskId(null)
+      openCompleteTask(task)
+      return
+    }
+
+    setError(null)
+
+    try {
+      await updateTaskStatus(task.id, status)
       setMessage('El estatus de la tarea fue actualizado.')
     } catch {
       setError('No se pudo actualizar el estatus de la tarea.')
@@ -990,7 +1180,7 @@ export default function TasksPage() {
                       <td className={TABLE.TD}>{task.puntosHistoria}</td>
                       <td className={TABLE.TD}>{task.horasReales.toFixed(2)} h</td>
                       <td className={TABLE.TD}>
-                        {isAdmin ? (
+                        {isAdmin || !canDeveloperEditTaskStatus(task) ? (
                           <Badge variante={obtenerVarianteEstatusTask(task.estatus)}>
                             {obtenerTextoEstatusTask(task.estatus)}
                           </Badge>
@@ -999,7 +1189,7 @@ export default function TasksPage() {
                             value={task.estatus}
                             onChange={(event) =>
                               void handleStatusChange(
-                                task.id,
+                                task,
                                 event.target.value as EstadoTareaPortal,
                               )
                             }
@@ -1082,11 +1272,28 @@ export default function TasksPage() {
           open={Boolean(previewTask)}
           task={previewTask}
           sessionBusy={sessionBusy}
+          canEditStatus={previewTask ? canDeveloperEditTaskStatus(previewTask) : false}
           onClose={() => setPreviewTaskId(null)}
           onStartSession={handleStartTaskSession}
+          onStatusChange={(status) => {
+            if (previewTask) {
+              void handleStatusChange(previewTask, status)
+            }
+          }}
           onStopSession={handleStopTaskSession}
         />
       )}
+
+      <CompleteTaskModal
+        error={completionError}
+        horas={completionHours}
+        open={Boolean(completionTask)}
+        saving={completionSaving}
+        task={completionTask}
+        onChangeHoras={setCompletionHours}
+        onClose={closeCompleteTask}
+        onConfirm={() => void handleCompleteTask()}
+      />
     </section>
   )
 }

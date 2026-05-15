@@ -9,7 +9,6 @@ import { useAuth } from '../../../auth'
 import { BotonIcono } from '../../../components/Button'
 import {
   IconoCampana,
-  IconoDashboard,
   IconoProyectos,
   IconoTareas,
 } from '../../../components/Icons'
@@ -30,11 +29,6 @@ const navigationItems: Array<{
   page: Pagina
 }> = [
   {
-    page: 'dashboard',
-    label: 'Dashboard',
-    icon: <IconoDashboard className="h-4 w-4" />,
-  },
-  {
     page: 'tareas',
     label: 'Tareas',
     icon: <IconoTareas className="h-4 w-4" />,
@@ -48,6 +42,11 @@ const navigationItems: Array<{
     page: 'codigos',
     label: 'Codigos de acceso',
     icon: <span className="text-xs font-bold">#</span>,
+  },
+  {
+    page: 'dashboard',
+    label: 'Dashboard',
+    icon: <span className="text-xs font-bold">📊</span>,
   },
 ]
 
