@@ -1,8 +1,10 @@
 #!/bin/bash
 
 export IMAGE_NAME=todolistapp-springboot
-export IMAGE_VERSION=0.1
-
+if [ -z "$IMAGE_VERSION" ]; then
+    export IMAGE_VERSION=${OCI_PRIMARY_SOURCE_COMMIT_HASH:-$(date '+%Y%m%d%H%M%S')}
+fi
+export BuildServiceDemoVersion=$IMAGE_VERSION
 
 if [ -z "$DOCKER_REGISTRY" ]; then
     export DOCKER_REGISTRY=$(state_get DOCKER_REGISTRY)
