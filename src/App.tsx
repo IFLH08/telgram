@@ -6,8 +6,7 @@ import PortalHeader from './features/portal/components/PortalHeader'
 import TasksPage from './features/portal/pages/TasksPage'
 import ProjectsPage from './features/portal/pages/ProjectsPage'
 import AccessCodesPage from './features/portal/pages/AccessCodesPage'
-import TequiDashboardPage from './features/portal/pages/TequiDashboardPage'
-import KpiDashboardPage from './dashboard/DashboardPage'
+import DashboardPage from './features/portal/pages/DashboardPage'
 import { useAuth } from './auth'
 import { obtenerNotificacionesUsuario } from './features/portal/selectors'
 
@@ -31,11 +30,9 @@ function AppContenido() {
       case 'codigos':
         return <AccessCodesPage />
       case 'dashboard':
-        return <KpiDashboardPage showBackLink={false} />
-      case 'tequi':
-        return <TequiDashboardPage />
+        return <DashboardPage />
       default:
-        return <KpiDashboardPage showBackLink={false} />
+        return <DashboardPage />
     }
   }
 
@@ -56,8 +53,9 @@ function AppContenido() {
 
 export default function App() {
   if (window.location.pathname === '/dashboard' || window.location.pathname === '/dashboard/') {
-    return <KpiDashboardPage />
+    return <DashboardPage />
   }
+
 
   return (
     <AuthProvider>
