@@ -863,6 +863,7 @@ async function actualizarPortalTaskMock(
       descripcion: (cambios.descripcion ?? actual.descripcion).trim(),
       fechaEntrega: cambios.fechaEntrega ?? actual.fechaEntrega,
       horasEstimadas: cambios.horasEstimadas ?? actual.horasEstimadas,
+      horasReales: cambios.horasReales ?? actual.horasReales,
       puntosHistoria: cambios.puntosHistoria ?? actual.puntosHistoria,
       estatus: estatusSiguiente,
       sprintId: sprint.id,
@@ -885,7 +886,14 @@ async function actualizarPortalTaskMock(
     )
   }
 
-  const sincronizada = sincronizarTimeTracking(actualizadaBase)
+  const sincronizadaBase = sincronizarTimeTracking(actualizadaBase)
+  const sincronizada =
+    cambios.horasReales === undefined
+      ? sincronizadaBase
+      : {
+          ...sincronizadaBase,
+          horasReales: cambios.horasReales,
+        }
   tasksDb = tasksDb.map((task) => (task.id === taskId ? sincronizada : task))
 
   if (persona.id !== actual.personaAsignadaId) {

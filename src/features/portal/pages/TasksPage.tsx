@@ -117,6 +117,10 @@ function TaskModal({
     return null
   }
 
+  const saveDisabled =
+    saving ||
+    (value.estatus === 'completada' && (!value.horasReales || value.horasReales <= 0))
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
       <div
@@ -271,7 +275,7 @@ function TaskModal({
                 id="task-real-hours"
                 type="number"
                 min="0.01"
-                step="0.25"
+                step="0.10"
                 value={value.horasReales ?? ''}
                 onChange={(event) => onChange('horasReales', Number(event.target.value))}
                 className={cx(SELECT.BASE, SELECT.DEFAULT, 'mt-2')}
@@ -298,7 +302,7 @@ function TaskModal({
           <Boton variante="secundario" onClick={onClose}>
             Cancelar
           </Boton>
-          <Boton onClick={onSave} disabled={saving}>
+          <Boton onClick={onSave} disabled={saveDisabled}>
             {saving ? 'Guardando...' : mode === 'create' ? 'Crear tarea' : 'Guardar cambios'}
           </Boton>
         </div>
@@ -345,6 +349,11 @@ function CompleteTaskModal({
     return null
   }
 
+  const normalizedHoras = horas.trim().replace(',', '.')
+  const parsedHoras = Number(normalizedHoras)
+  const confirmDisabled =
+    saving || !normalizedHoras || !Number.isFinite(parsedHoras) || parsedHoras <= 0
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
       <div
@@ -371,8 +380,8 @@ function CompleteTaskModal({
           <input
             id="complete-task-real-hours"
             type="number"
-            min="0.01"
-            step="0.25"
+            min="0.1"
+            step="0.10"
             value={horas}
             onChange={(event) => onChangeHoras(event.target.value)}
             className={cx(SELECT.BASE, SELECT.DEFAULT, 'mt-2')}
@@ -388,7 +397,7 @@ function CompleteTaskModal({
           <Boton variante="secundario" onClick={onClose} disabled={saving}>
             Cancelar
           </Boton>
-          <Boton onClick={onConfirm} disabled={saving}>
+          <Boton onClick={onConfirm} disabled={confirmDisabled}>
             {saving ? 'Guardando...' : 'Marcar completada'}
           </Boton>
         </div>
@@ -775,7 +784,7 @@ export default function TasksPage() {
     setMessage(null)
     setCompletionError(null)
     setCompletionTask(task)
-    setCompletionHours(task.horasReales > 0 ? String(task.horasReales) : '')
+    setCompletionHours(task.horasReales && task.horasReales > 0 ? String(task.horasReales) : '')
   }
 
   const closeCompleteTask = () => {
@@ -797,11 +806,17 @@ export default function TasksPage() {
   }
 
   const handleCompleteTask = async () => {
-    if (!completionTask) {
+    if (!completionTask || completionSaving) {
       return
     }
 
-    const horasReales = Number(completionHours)
+    const normalizedHours = completionHours.trim().replace(',', '.')
+    const horasReales = Number(normalizedHours)
+
+    if (!normalizedHours) {
+      setCompletionError('Debes ingresar las horas reales antes de completar la tarea.')
+      return
+    }
 
     if (!Number.isFinite(horasReales) || horasReales <= 0) {
       setCompletionError('Ingresa un numero de horas reales mayor a cero.')
@@ -811,12 +826,12 @@ export default function TasksPage() {
     setCompletionSaving(true)
     setCompletionError(null)
     setError(null)
+    setMessage(null)
 
     try {
       await updateTaskStatus(completionTask.id, 'completada', horasReales)
       setMessage('La tarea fue marcada como completada y las horas reales fueron registradas.')
-      setCompletionTask(null)
-      setCompletionHours('')
+      closeCompleteTask()
     } catch (caughtError) {
       setCompletionError(
         caughtError instanceof Error
@@ -841,6 +856,7 @@ export default function TasksPage() {
     }
 
     setError(null)
+    setMessage(null)
 
     try {
       await updateTaskStatus(task.id, status)
