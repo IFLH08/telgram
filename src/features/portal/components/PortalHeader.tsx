@@ -119,7 +119,7 @@ export default function PortalHeader({
                     'block text-[32px] leading-none transition group-hover:text-[#33553C]',
                   )}
                 >
-                  DevTask
+                  Dev Portal
                 </span>
                 <span className={cx(TYPO.CAPTION, 'mt-1 block')}>
                   Portal de administracion
