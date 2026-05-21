@@ -16,7 +16,8 @@
 	<properties>
 		<java.version>11</java.version>
 		<version.lib.ojdbc>21.1.0.0</version.lib.ojdbc>
-		<frontend-src-dir>${project.basedir}/src/main/frontend</frontend-src-dir>
+		<frontend-src-dir>${project.basedir}/../..</frontend-src-dir>
+		<frontend-build-dir>${frontend-src-dir}/dist</frontend-build-dir>
 		<node.version>v23.9.0</node.version>
 		<npm.version>8.1.2</npm.version>
 	</properties>
@@ -116,6 +117,9 @@
 						<goals>
 							<goal>npm</goal>
 						</goals>
+						<configuration>
+							<arguments>install --no-package-lock</arguments>
+						</configuration>
 					</execution>
 					<execution>
 						<id>npm run build</id>
@@ -124,6 +128,9 @@
 						</goals>
 						<configuration>
 							<arguments>run build</arguments>
+							<environmentVariables>
+								<VITE_BASE_PATH>./</VITE_BASE_PATH>
+							</environmentVariables>
 						</configuration>
 					</execution>
 				</executions>
@@ -143,7 +150,7 @@
 							<outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
 							<resources>
 								<resource>
-									<directory>${frontend-src-dir}/build</directory>
+									<directory>${frontend-build-dir}</directory>
 									<filtering>false</filtering>
 								</resource>
 							</resources>

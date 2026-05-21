@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+:root {
+  --portal-font-family: "OracleSansVF", "Oracle Sans", "Segoe UI", Arial, sans-serif;
+  --portal-color-primary: #33553c;
+  --portal-color-secondary: #006b8f;
+  --portal-color-text: #161513;
+  --portal-color-border: #e2ddd6;
+  --portal-color-surface-subtle: #fbfaf8;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--portal-font-family);
+  background: #ffffff;
+  color: var(--portal-color-text);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.portal-visual-root .rounded-lg,
+.portal-visual-root .rounded-xl,
+.portal-visual-root .rounded-2xl,
+.portal-visual-root .rounded-3xl {
+  border-radius: 4px;
+}
+
+.portal-visual-root .shadow-sm,
+.portal-visual-root .shadow-md,
+.portal-visual-root .shadow-xl {
+  box-shadow: 0 1px 2px rgba(22, 21, 19, 0.04);
+}
+
+.portal-visual-root .bg-gray-50 {
+  background-color: var(--portal-color-surface-subtle);
+}
+
+.portal-visual-root .border-gray-200 {
+  border-color: var(--portal-color-border);
+}
+
+.portal-visual-root .border-gray-100 {
+  border-color: #ece7e1;
+}
+
+.portal-visual-root .text-gray-500 {
+  color: #8b857e;
+}
+
+.portal-visual-root .text-gray-600 {
+  color: #66635e;
+}
+
+.portal-line-clamp-1,
+.portal-line-clamp-2,
+.portal-line-clamp-3 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+}
+
+.portal-line-clamp-1 {
+  -webkit-line-clamp: 1;
+}
+
+.portal-line-clamp-2 {
+  -webkit-line-clamp: 2;
+}
+
+.portal-line-clamp-3 {
+  -webkit-line-clamp: 3;
+}
+
+.portal-wrap-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

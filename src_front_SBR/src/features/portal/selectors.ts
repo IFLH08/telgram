@@ -17,27 +17,6 @@ function normalizarTexto(valor: string) {
   return valor.trim().toLowerCase()
 }
 
-type SprintDeveloperMetric = {
-  sprintId: string
-  sprintName: string
-  developerId: string
-  developerName: string
-  completedTasks: number
-  realHours: number
-}
-
-export type DeveloperSprintSeries = {
-  key: string
-  label: string
-}
-
-export type DeveloperSprintRow = {
-  sprint: string
-  sprintId: string
-  values: Record<string, number>
-  total: number
-}
-
 function obtenerFechaLocal(valor: string | undefined) {
   if (!valor) {
     return null
@@ -326,72 +305,6 @@ export function calcularMetricasPersonales(tasks: PortalTask[]) {
     enProgreso: tasks.filter((task) => task.estatus === 'en_progreso').length,
     completadas: tasks.filter((task) => task.estatus === 'completada').length,
     proximasAVencer,
-  }
-}
-
-export function construirMetricasDeveloperSprint(metrics: SprintDeveloperMetric[]) {
-  const sprintMap = new Map<
-    string,
-    {
-      sprint: string
-      sprintId: string
-      completedValues: Record<string, number>
-      hourValues: Record<string, number>
-    }
-  >()
-  const developerMap = new Map<string, DeveloperSprintSeries>()
-
-  metrics.forEach((metric, index) => {
-    const sprintId = metric.sprintId || metric.sprintName || `sprint-${index}`
-    const developerKey = `developer_${metric.developerId || index}`
-
-    if (!sprintMap.has(sprintId)) {
-      sprintMap.set(sprintId, {
-        sprint: metric.sprintName,
-        sprintId,
-        completedValues: {},
-        hourValues: {},
-      })
-    }
-
-    if (!developerMap.has(developerKey)) {
-      developerMap.set(developerKey, {
-        key: developerKey,
-        label: metric.developerName,
-      })
-    }
-
-    const sprint = sprintMap.get(sprintId)
-
-    if (sprint) {
-      sprint.completedValues[developerKey] = metric.completedTasks
-      sprint.hourValues[developerKey] = metric.realHours
-    }
-  })
-
-  const series = Array.from(developerMap.values()).sort((left, right) =>
-    left.label.localeCompare(right.label),
-  )
-
-  const toRows = (valueKey: 'completedValues' | 'hourValues'): DeveloperSprintRow[] =>
-    Array.from(sprintMap.values()).map((sprint) => {
-      const values = series.reduce<Record<string, number>>((accumulator, developer) => {
-        accumulator[developer.key] = sprint[valueKey][developer.key] ?? 0
-        return accumulator
-      }, {})
-
-      return {
-        sprint: sprint.sprint,
-        sprintId: sprint.sprintId,
-        values,
-        total: Object.values(values).reduce((total, value) => total + value, 0),
-      }
-    })
-
-  return {
-    series,
-    completedBySprint: toRows('completedValues'),
-    realHoursBySprint: toRows('hourValues'),
   }
 }
 

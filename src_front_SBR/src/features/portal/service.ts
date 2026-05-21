@@ -548,44 +548,6 @@ type ApiTarea = {
   fechaEliminacion?: string
 }
 
-type ApiDashboardMetric = {
-  idMetrica: number
-  proyecto?: ApiProyecto
-  sprint?: ApiSprint
-  nombreKpi: string
-  valor: number
-  fechaCalculo?: string
-}
-
-type ApiSprintDeveloperMetric = {
-  sprintId?: number | string
-  sprintName?: string
-  developerId?: number | string
-  developerName?: string
-  completedTasks?: number | string
-  realHours?: number | string
-}
-
-export type PortalDashboardMetric = {
-  id: string
-  proyectoId: string
-  proyectoNombre: string
-  sprintId?: string
-  sprintNombre?: string
-  nombreKpi: string
-  valor: number
-  fechaCalculo?: string
-}
-
-export type PortalSprintDeveloperMetric = {
-  sprintId: string
-  sprintName: string
-  developerId: string
-  developerName: string
-  completedTasks: number
-  realHours: number
-}
-
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     headers: {
@@ -656,11 +618,6 @@ function prioridadParaApi(prioridad: PortalTask['prioridad']): ApiPrioridad {
   return { nombre: prioridad }
 }
 
-function numeroSeguro(valor: unknown) {
-  const numero = Number(valor)
-  return Number.isFinite(numero) ? numero : 0
-}
-
 function mapProyectoApi(proyecto: ApiProyecto): PortalProject {
   return {
     id: String(proyecto.idProyecto),
@@ -713,33 +670,6 @@ function mapTareaApi(tarea: ApiTarea): PortalTask {
     horasReales: tarea.horasReales ?? 0,
     sesionesTrabajo: [],
     actualizadoEn: tarea.fechaCreacion ?? new Date().toISOString(),
-  }
-}
-
-function mapDashboardMetricApi(metric: ApiDashboardMetric): PortalDashboardMetric {
-  return {
-    id: String(metric.idMetrica),
-    proyectoId: metric.proyecto?.idProyecto ? String(metric.proyecto.idProyecto) : '',
-    proyectoNombre: metric.proyecto?.nombre ?? 'Sin proyecto',
-    sprintId: metric.sprint?.idSprint ? String(metric.sprint.idSprint) : undefined,
-    sprintNombre: metric.sprint?.nombre,
-    nombreKpi: metric.nombreKpi,
-    valor: numeroSeguro(metric.valor),
-    fechaCalculo: metric.fechaCalculo,
-  }
-}
-
-function mapSprintDeveloperMetricApi(
-  metric: ApiSprintDeveloperMetric,
-  index: number,
-): PortalSprintDeveloperMetric {
-  return {
-    sprintId: String(metric.sprintId ?? metric.sprintName ?? `sprint-${index}`),
-    sprintName: metric.sprintName?.trim() || 'Sin sprint',
-    developerId: String(metric.developerId ?? metric.developerName ?? `developer-${index}`),
-    developerName: metric.developerName?.trim() || 'Sin asignar',
-    completedTasks: numeroSeguro(metric.completedTasks),
-    realHours: numeroSeguro(metric.realHours),
   }
 }
 
@@ -806,19 +736,6 @@ export async function obtenerPortalSnapshot(): Promise<PortalSnapshot> {
     console.warn('Usando datos mock porque no se pudo cargar el snapshot real.', error)
     return Promise.resolve(snapshotActual())
   }
-}
-
-export async function obtenerDashboardMetrics(): Promise<PortalDashboardMetric[]> {
-  const metrics = await fetchJson<ApiDashboardMetric[]>('/api/dashboard/metrics')
-  return Array.isArray(metrics) ? metrics.map(mapDashboardMetricApi) : []
-}
-
-export async function obtenerSprintDeveloperMetrics(): Promise<PortalSprintDeveloperMetric[]> {
-  const metrics = await fetchJson<ApiSprintDeveloperMetric[]>(
-    '/api/dashboard/sprint-developer-metrics',
-  )
-
-  return Array.isArray(metrics) ? metrics.map(mapSprintDeveloperMetricApi) : []
 }
 
 export async function crearPortalTask(
