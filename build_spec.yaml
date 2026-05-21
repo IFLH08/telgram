@@ -9,6 +9,7 @@ env:
 
   exportedVariables:
     - BuildServiceDemoVersion
+    - IMAGE_URI
 
 steps:
   - type: Command

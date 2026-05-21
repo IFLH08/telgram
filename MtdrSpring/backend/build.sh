@@ -16,6 +16,7 @@ if [ -z "$DOCKER_REGISTRY" ]; then
 fi
 
 export IMAGE=${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_VERSION}
+export IMAGE_URI=$IMAGE
 
 BACKEND_DIR=$(pwd)
 REPO_ROOT=$(cd "$BACKEND_DIR/../.." && pwd)
