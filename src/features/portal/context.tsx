@@ -30,6 +30,7 @@ import type {
 } from './types'
 
 interface PortalState extends PortalSnapshot {
+  loadError: string | null
   users: Usuario[]
 }
 
@@ -55,6 +56,7 @@ interface PortalContextValue extends PortalState {
 const PortalContext = createContext<PortalContextValue | undefined>(undefined)
 
 const estadoInicial: PortalState = {
+  loadError: null,
   users: [],
   tasks: [],
   projects: [],
@@ -67,15 +69,26 @@ export function PortalProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PortalState>(estadoInicial)
 
   const refreshSnapshot = useCallback(async () => {
-    const [snapshot, users] = await Promise.all([
-      obtenerPortalSnapshot(),
-      obtenerUsuarios(),
-    ])
+    try {
+      const [snapshot, users] = await Promise.all([
+        obtenerPortalSnapshot(),
+        obtenerUsuarios(),
+      ])
 
-    setState({
-      ...snapshot,
-      users,
-    })
+      setState({
+        ...snapshot,
+        loadError: null,
+        users,
+      })
+    } catch (error) {
+      setState((current) => ({
+        ...current,
+        loadError:
+          error instanceof Error
+            ? error.message
+            : 'No se pudieron cargar los datos reales del portal.',
+      }))
+    }
   }, [])
 
   useEffect(() => {

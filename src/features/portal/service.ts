@@ -42,10 +42,13 @@ function siguienteId(prefijo: string) {
 }
 
 function obtenerUsuarioPorId(usuarioId: string): Usuario | undefined {
+  // Demo-only lookup used by local task timers while the backend lacks a
+  // work-session endpoint. Real user lists are loaded in auth.service.ts.
   return usuariosMock.find((usuario) => usuario.id === usuarioId)
 }
 
 function obtenerUsuariosAdministradores() {
+  // Demo-only recipients for local notification generation.
   return usuariosMock.filter((usuario) => usuario.rol === 'admin')
 }
 
@@ -250,6 +253,8 @@ function crearSprintInicial(project: PortalProject): PortalSprint {
   }
 }
 
+// Demo-only seed data retained for features without backend endpoints. This
+// block must not be used as a fallback for the real portal snapshot.
 const ahora = new Date()
 
 const initialProjects: PortalProject[] = [
@@ -714,28 +719,14 @@ async function obtenerPortalSnapshotApi(): Promise<PortalSnapshot> {
     projects: projectsApi.map(mapProyectoApi),
     sprints: sprintsApi.map(mapSprintApi),
     tasks: tasksApi.filter((task) => !task.eliminada).map(mapTareaApi),
-    notifications: clonar(notificationsDb),
-    memberships: clonar(membershipsDb),
-  }
-}
-
-function snapshotActual(): PortalSnapshot {
-  return {
-    projects: clonar(projectsDb),
-    sprints: clonar(sprintsDb),
-    tasks: clonar(tasksDb.filter((task) => !task.eliminada)),
+    // Demo-only until backend endpoints exist for notifications and memberships.
     notifications: clonar(notificationsDb),
     memberships: clonar(membershipsDb),
   }
 }
 
 export async function obtenerPortalSnapshot(): Promise<PortalSnapshot> {
-  try {
-    return await obtenerPortalSnapshotApi()
-  } catch (error) {
-    console.warn('Usando datos mock porque no se pudo cargar el snapshot real.', error)
-    return Promise.resolve(snapshotActual())
-  }
+  return obtenerPortalSnapshotApi()
 }
 
 export async function crearPortalTask(
@@ -951,6 +942,7 @@ export async function iniciarPortalTaskSession(
   taskId: string,
   userId: string,
 ): Promise<PortalTask> {
+  // Demo-only until a work-session backend endpoint exists.
   const actual = tasksDb.find((task) => task.id === taskId)
   const usuario = obtenerUsuarioPorId(userId)
 
@@ -994,6 +986,7 @@ export async function detenerPortalTaskSession(
   taskId: string,
   userId: string,
 ): Promise<PortalTask> {
+  // Demo-only until a work-session backend endpoint exists.
   const actual = tasksDb.find((task) => task.id === taskId)
 
   if (!actual) {
@@ -1058,61 +1051,18 @@ export async function crearPortalProject(
 }
 
 export async function regenerarPortalAccessCode(
-  projectId: string,
+  _projectId: string,
 ): Promise<PortalProject> {
-  const proyecto = projectsDb.find((project) => project.id === projectId)
-
-  if (!proyecto) {
-    throw new Error('No se encontro el proyecto para actualizar el codigo.')
-  }
-
-  const actualizado = {
-    ...proyecto,
-    codigoAcceso: generarCodigoProyecto(proyecto.nombre),
-  }
-
-  projectsDb = projectsDb.map((project) =>
-    project.id === projectId ? actualizado : project,
+  throw new Error(
+    'Regenerar codigos de acceso requiere un endpoint backend real. Esta accion queda fuera del demo real.',
   )
-
-  return Promise.resolve(clonar(actualizado))
 }
 
 export async function unirUsuarioAProyectoConCodigo(
-  code: string,
-  userId: string,
+  _code: string,
+  _userId: string,
 ): Promise<{ message: string; proyectoId: string }> {
-  const proyecto = projectsDb.find(
-    (item) => item.codigoAcceso.toLowerCase() === code.trim().toLowerCase(),
+  throw new Error(
+    'Unirse por codigo requiere un endpoint backend real. Esta accion queda fuera del demo real.',
   )
-
-  if (!proyecto) {
-    throw new Error('El codigo de acceso no es valido.')
-  }
-
-  const yaExiste = membershipsDb.some(
-    (membership) =>
-      membership.usuarioId === userId && membership.proyectoId === proyecto.id,
-  )
-
-  if (yaExiste) {
-    return Promise.resolve({
-      message: 'El usuario ya tiene acceso a ese proyecto.',
-      proyectoId: proyecto.id,
-    })
-  }
-
-  membershipsDb = [
-    ...membershipsDb,
-    {
-      usuarioId: userId,
-      proyectoId: proyecto.id,
-      unidoEn: formatoFechaHora(new Date()),
-    },
-  ]
-
-  return Promise.resolve({
-    message: `Acceso concedido a ${proyecto.nombre}.`,
-    proyectoId: proyecto.id,
-  })
 }
