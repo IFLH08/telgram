@@ -9,11 +9,12 @@ import AccessCodesPage from './features/portal/pages/AccessCodesPage'
 import DashboardPage from './features/portal/pages/DashboardPage'
 import { useAuth } from './auth'
 import { obtenerNotificacionesUsuario } from './features/portal/selectors'
+import { ALERT, LAYOUT, cx } from './constants/colors'
 
 function AppContenido() {
   const [paginaActual, setPaginaActual] = useState<Pagina>('dashboard')
   const { usuarioActual } = useAuth()
-  const { notifications, tasks } = usePortal()
+  const { loadError, notifications, tasks } = usePortal()
 
   const notificaciones = obtenerNotificacionesUsuario(
     usuarioActual,
@@ -45,6 +46,13 @@ function AppContenido() {
       />
 
       <main className="pb-10">
+        {loadError && (
+          <div className={cx(LAYOUT.PAGE_CONTAINER, 'pb-0')}>
+            <div className={cx(ALERT.BASE, ALERT.DANGER)}>
+              {loadError}
+            </div>
+          </div>
+        )}
         {renderizarPagina()}
       </main>
     </div>
