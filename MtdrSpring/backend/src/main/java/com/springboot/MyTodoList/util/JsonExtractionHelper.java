@@ -6,26 +6,38 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class JsonExtractionHelper {
-    
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    /**
-     * Extrae el contenido (content) del resultado JSON en bruto de DeepSeek API.
-     * DeepSeek envía algo como {"choices":[{"message":{"content":"{...}"}}]}
-     */
-    public String extractInternalContent(String rawDeepSeekResponse) {
+    public String extractInternalContent(String rawModelResponse) {
+        String cleanedResponse = stripMarkdown(rawModelResponse);
+
         try {
-            JsonNode root = objectMapper.readTree(rawDeepSeekResponse);
+            JsonNode root = objectMapper.readTree(cleanedResponse);
             JsonNode choices = root.path("choices");
             if (choices.isArray() && choices.size() > 0) {
                 String content = choices.get(0).path("message").path("content").asText();
-                // Limpiar posibles bloques markdown "```json ... ```"
-                content = content.replaceAll("```json", "").replaceAll("```", "").trim();
-                return content;
+                return stripMarkdown(content);
+            }
+
+            if (root.isArray() || root.isObject()) {
+                return cleanedResponse;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            return cleanedResponse;
         }
+
         return "{}";
+    }
+
+    private String stripMarkdown(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value
+                .replaceAll("(?i)```json", "")
+                .replaceAll("```", "")
+                .trim();
     }
 }

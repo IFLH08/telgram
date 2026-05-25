@@ -16,6 +16,8 @@
 *.tar.gz
 *.rar
 backend/target/*
+/MtdrSpring/backend/target/
+/MtdrSpring/backend/run_app.bat
 backend/.settings/*
 backend/.project
 backend/.classpath
@@ -62,6 +64,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+demo-captures/
 *.local
 .env
 .env.*

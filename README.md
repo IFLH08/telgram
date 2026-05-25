@@ -1,6 +1,40 @@
 https://www.canva.com/design/DAG7Ug0g8SE/sWtF6hIbjp1lNv7ra0aN9w/edit?utm_content=DAG7Ug0g8SE&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
 # DevTask
 
+## Spring AI en el backend Spring Boot
+
+La integracion de IA del backend Spring Boot vive en `MtdrSpring/backend` y usa Spring AI con un proveedor remoto compatible con OpenAI. Para la entrega actual se usa Groq como proveedor remoto porque el proyecto ya maneja `GROQ_API_KEY`.
+
+Variables requeridas para levantar el backend real:
+
+```env
+DB_URL=jdbc:oracle:thin:@...
+TNS_ADMIN_PATH=/ruta/a/wallet
+DB_USER=...
+DB_PASSWORD=...
+GROQ_API_KEY=...
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_BOT_NAME=...
+```
+
+Variables opcionales para cambiar el proveedor OpenAI-compatible, por ejemplo un modelo dockerizado en OCI:
+
+```env
+SPRING_AI_OPENAI_BASE_URL=http://host-del-modelo:puerto
+SPRING_AI_OPENAI_CHAT_MODEL=nombre-del-modelo
+SPRING_AI_TEMPERATURE=0.2
+```
+
+Endpoint de verificacion:
+
+```http
+GET /api/spring-ai/ask?prompt=Explica brevemente Spring AI
+```
+
+El flujo real del bot conserva `/AddTask ...`, pero ahora la generacion del JSON de tareas pasa por Spring AI. El modelo debe devolver un arreglo JSON con `nombre`, `descripcion`, `horasEstimadas` e `idPrioridad`; despues el bot mantiene la confirmacion del usuario y guarda las tareas en Oracle.
+
+Pendiente de infraestructura: si el equipo de OCI provee un modelo administrado en OCI GenAI, se puede migrar a `spring-ai-starter-model-oci-genai`. Si provee un modelo dockerizado compatible con OpenAI, basta apuntar `SPRING_AI_OPENAI_BASE_URL` al endpoint del contenedor. Kubernetes queda como integracion opcional.
+
 DevTask es una plataforma de gestión de proyectos y tareas moderna, diseñada para equipos de desarrollo. Construida con React 19 y Node.js, cuenta con una sólida arquitectura y está integrada nativamente con la inteligencia artificial de Google Gemini para agilizar la redacción y planeación de tareas.
 
 ## Características Principales

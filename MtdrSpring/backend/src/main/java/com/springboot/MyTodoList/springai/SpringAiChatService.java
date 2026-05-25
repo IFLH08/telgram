@@ -13,9 +13,10 @@ public class SpringAiChatService {
     }
 
     public String ask(String prompt) {
-        return this.chatClient.prompt()
+        String content = this.chatClient.prompt()
                 .user(prompt)
                 .call()
                 .content();
+        return content == null ? "" : content;
     }
 }

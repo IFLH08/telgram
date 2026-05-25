@@ -19,7 +19,6 @@ import com.springboot.MyTodoList.util.BotHelper;
 import com.springboot.MyTodoList.util.JsonExtractionHelper;
 import com.springboot.MyTodoList.util.SessionManager;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -44,8 +43,7 @@ import com.springboot.MyTodoList.util.BotLabels;
 public class ConversationalBotService {
 
     private final TelegramClient telegramClient;
-    @Autowired
-    private final DeepSeekService deepSeekService;
+    private final AiTaskGenerationService aiTaskGenerationService;
     private final SessionManager sessionManager;
     private final JsonExtractionHelper jsonHelper;
     private final TareaRepository tareaRepository;
@@ -61,14 +59,14 @@ public class ConversationalBotService {
     private static final String BTN_KPI_TASKS = "KPI Tasks";
     private static final String BTN_KPI_HOURS = "KPI Hours";
 
-    public ConversationalBotService(TelegramClient telegramClient, DeepSeekService deepSeekService,
+    public ConversationalBotService(TelegramClient telegramClient, AiTaskGenerationService aiTaskGenerationService,
             SessionManager sessionManager, JsonExtractionHelper jsonHelper,
             TareaRepository tareaRepository, UsuarioRepository usuarioRepository,
             EstadoTareaRepository estadoTareaRepository, PrioridadRepository prioridadRepository,
             RolRepository rolRepository, SprintRepository sprintRepository,
             DashboardMetricsService dashboardMetricsService) {
         this.telegramClient = telegramClient;
-        this.deepSeekService = deepSeekService;
+        this.aiTaskGenerationService = aiTaskGenerationService;
         this.sessionManager = sessionManager;
         this.jsonHelper = jsonHelper;
         this.tareaRepository = tareaRepository;
@@ -628,7 +626,7 @@ public class ConversationalBotService {
         String llmRawResponse = "";
 
         try {
-            llmRawResponse = deepSeekService.generateText(prompt);
+            llmRawResponse = aiTaskGenerationService.generateTaskJson(prompt);
             String cleanedJson = jsonHelper.extractInternalContent(llmRawResponse);
 
             if (cleanedJson.equals("{}") || (!cleanedJson.trim().startsWith("["))) {
@@ -682,7 +680,7 @@ public class ConversationalBotService {
 
         String llmRawResponse = "";
         try {
-            llmRawResponse = deepSeekService.generateText(prompt);
+            llmRawResponse = aiTaskGenerationService.generateTaskJson(prompt);
             String clned = jsonHelper.extractInternalContent(llmRawResponse);
             if (clned.equals("{}") || (!clned.trim().startsWith("["))) {
                 int start = llmRawResponse.indexOf('[');

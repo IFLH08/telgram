@@ -1,8 +1,6 @@
 package com.springboot.MyTodoList.controller;
 
 import com.springboot.MyTodoList.config.BotProps;
-import com.springboot.MyTodoList.service.DeepSeekService;
-import com.springboot.MyTodoList.service.DeepSeekService;
 import com.springboot.MyTodoList.service.ConversationalBotService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +20,6 @@ public class ToDoItemBotController  implements SpringLongPollingBot, LongPolling
 
 	private static final Logger logger = LoggerFactory.getLogger(ToDoItemBotController.class);
 	private final ConversationalBotService conversationalBotService;
-	private DeepSeekService deepSeekService;
 	private final TelegramClient telegramClient;
 	
 	private final BotProps botProps;
@@ -41,10 +38,9 @@ public class ToDoItemBotController  implements SpringLongPollingBot, LongPolling
     }
 
 
-	public ToDoItemBotController(BotProps bp, DeepSeekService ds, ConversationalBotService cbService) {
+	public ToDoItemBotController(BotProps bp, ConversationalBotService cbService) {
 		this.botProps = bp;
 		telegramClient = new OkHttpTelegramClient(getBotToken());
-		deepSeekService = ds;
         this.conversationalBotService = cbService;
 	}
 
