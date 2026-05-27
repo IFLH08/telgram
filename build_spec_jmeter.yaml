@@ -1,0 +1,51 @@
+version: 0.1
+component: build
+timeoutInSeconds: 1800
+shell: bash
+
+env:
+  variables:
+    JMETER_VERSION: "5.6.3"
+    JMETER_PROTOCOL: "http"
+    JMETER_HOST: "159.54.158.247"
+    JMETER_PORT: "80"
+    JMETER_USERS: "400"
+    JMETER_RAMPUP: "60"
+    JMETER_LOOPS: "5"
+
+steps:
+  - type: Command
+    name: "Install Java and tools"
+    command: |
+      yum install -y java-17-openjdk-headless wget tar
+      java -version
+
+  - type: Command
+    name: "Download Apache JMeter"
+    command: |
+      cd /tmp
+      wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz
+      tar -xzf apache-jmeter-${JMETER_VERSION}.tgz
+      /tmp/apache-jmeter-${JMETER_VERSION}/bin/jmeter --version
+
+  - type: Command
+    name: "Run load test"
+    command: |
+      mkdir -p performance/jmeter
+      rm -rf performance/jmeter/report
+      /tmp/apache-jmeter-${JMETER_VERSION}/bin/jmeter -n \
+        -t performance/jmeter/reto-load-test.jmx \
+        -l performance/jmeter/results.jtl \
+        -e -o performance/jmeter/report \
+        -Jprotocol=${JMETER_PROTOCOL} \
+        -Jhost=${JMETER_HOST} \
+        -Jport=${JMETER_PORT} \
+        -Jusers=${JMETER_USERS} \
+        -Jrampup=${JMETER_RAMPUP} \
+        -Jloops=${JMETER_LOOPS}
+
+  - type: Command
+    name: "Show quick summary"
+    command: |
+      echo "Artifacts generated:"
+      ls -R performance/jmeter
