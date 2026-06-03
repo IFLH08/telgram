@@ -167,6 +167,10 @@ export function filtrarTareasPorPeriodo(
   tasks: PortalTask[],
   period: DashboardPeriod,
 ) {
+  if (period === 'todos') {
+    return tasks
+  }
+
   if (period === 'sprint') {
     return tasks.filter((task) => task.sprintEsActual)
   }

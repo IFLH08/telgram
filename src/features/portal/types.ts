@@ -6,7 +6,7 @@ export type EstadoTareaPortal =
 
 export type PrioridadTareaPortal = 'alta' | 'media' | 'baja'
 
-export type DashboardPeriod = '7d' | '15d' | '30d' | 'sprint'
+export type DashboardPeriod = 'todos' | '7d' | '15d' | '30d' | 'sprint'
 
 export interface PortalProject {
   id: string

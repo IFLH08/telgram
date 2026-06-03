@@ -30,14 +30,20 @@ import {
 import type { DashboardPeriod } from '../types'
 
 function DashboardFilters({
+  currentDeveloperId,
   currentPeriod,
   currentProjectId,
+  developerOptions,
+  onChangeDeveloper,
   onChangePeriod,
   onChangeProject,
   projectOptions,
 }: {
+  currentDeveloperId: string
   currentPeriod: DashboardPeriod
   currentProjectId: string
+  developerOptions: Array<{ id: string; nombreCompleto: string }>
+  onChangeDeveloper: (value: string) => void
   onChangePeriod: (value: DashboardPeriod) => void
   onChangeProject: (value: string) => void
   projectOptions: Array<{ id: string; nombre: string }>
@@ -52,7 +58,7 @@ function DashboardFilters({
       </CardHeader>
 
       <CardContent>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <div>
             <label htmlFor="dashboard-project-filter" className={TYPO.LABEL}>Proyecto</label>
             <select
@@ -71,13 +77,31 @@ function DashboardFilters({
           </div>
 
           <div>
-            <label htmlFor="dashboard-period-filter" className={TYPO.LABEL}>Periodo</label>
+            <label htmlFor="dashboard-developer-filter" className={TYPO.LABEL}>Developer</label>
+            <select
+              id="dashboard-developer-filter"
+              value={currentDeveloperId}
+              onChange={(event) => onChangeDeveloper(event.target.value)}
+              className={cx(SELECT.BASE, SELECT.DEFAULT, 'mt-2')}
+            >
+              <option value="todos">Todos los developers</option>
+              {developerOptions.map((developer) => (
+                <option key={developer.id} value={developer.id}>
+                  {developer.nombreCompleto}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="dashboard-period-filter" className={TYPO.LABEL}>Sprint</label>
             <select
               id="dashboard-period-filter"
               value={currentPeriod}
               onChange={(event) => onChangePeriod(event.target.value as DashboardPeriod)}
               className={cx(SELECT.BASE, SELECT.DEFAULT, 'mt-2')}
             >
+              <option value="todos">Todos los sprints</option>
               <option value="7d">Ultimos 7 dias</option>
               <option value="15d">Ultimos 15 dias</option>
               <option value="30d">Ultimos 30 dias</option>
@@ -355,11 +379,12 @@ function DashboardMetricsList({ metrics }: { metrics: PortalDashboardMetric[] })
 
 export default function DashboardPage() {
   const { usuarioActual } = useAuth()
-  const { memberships, notifications, projects, tasks } = usePortal()
+  const { memberships, notifications, projects, tasks, users } = usePortal()
   const isAdmin = esAdminPortal(usuarioActual)
 
   const [projectIdFilter, setProjectIdFilter] = useState('todos')
-  const [periodFilter, setPeriodFilter] = useState<DashboardPeriod>('sprint')
+  const [developerIdFilter, setDeveloperIdFilter] = useState('todos')
+  const [periodFilter, setPeriodFilter] = useState<DashboardPeriod>('todos')
   const [dashboardMetrics, setDashboardMetrics] = useState<PortalDashboardMetric[]>([])
   const [sprintDeveloperMetrics, setSprintDeveloperMetrics] = useState<
     PortalSprintDeveloperMetric[]
@@ -420,33 +445,50 @@ export default function DashboardPage() {
     return obtenerTareasVisibles(usuarioActual, tasks, memberships, projects)
   }, [usuarioActual, tasks, memberships, projects])
 
+  const developerOptions = useMemo(() => {
+    return users.filter((user) => user.rol === 'developer')
+  }, [users])
+
   const dashboardTasks = useMemo(() => {
     const byProject =
       projectIdFilter === 'todos'
         ? visibleTasks
         : visibleTasks.filter((task) => task.proyectoId === projectIdFilter)
 
-    return filtrarTareasPorPeriodo(byProject, periodFilter)
-  }, [periodFilter, projectIdFilter, visibleTasks])
+    const byDeveloper =
+      developerIdFilter === 'todos'
+        ? byProject
+        : byProject.filter((task) => task.personaAsignadaId === developerIdFilter)
+
+    return filtrarTareasPorPeriodo(byDeveloper, periodFilter)
+  }, [developerIdFilter, periodFilter, projectIdFilter, visibleTasks])
+
+  const filteredSprintDeveloperMetrics = useMemo(() => {
+    if (developerIdFilter === 'todos') {
+      return sprintDeveloperMetrics
+    }
+
+    return sprintDeveloperMetrics.filter((metric) => metric.developerId === developerIdFilter)
+  }, [developerIdFilter, sprintDeveloperMetrics])
 
   const developerSprintData = useMemo(() => {
-    return construirMetricasDeveloperSprint(sprintDeveloperMetrics)
-  }, [sprintDeveloperMetrics])
+    return construirMetricasDeveloperSprint(filteredSprintDeveloperMetrics)
+  }, [filteredSprintDeveloperMetrics])
 
   const realKpiSummary = useMemo(() => {
     return {
-      completedTasks: sprintDeveloperMetrics.reduce(
+      completedTasks: filteredSprintDeveloperMetrics.reduce(
         (total, metric) => total + metric.completedTasks,
         0,
       ),
-      realHours: sprintDeveloperMetrics.reduce(
+      realHours: filteredSprintDeveloperMetrics.reduce(
         (total, metric) => total + metric.realHours,
         0,
       ),
       developers: developerSprintData.series.length,
       sprints: developerSprintData.completedBySprint.length,
     }
-  }, [developerSprintData, sprintDeveloperMetrics])
+  }, [developerSprintData, filteredSprintDeveloperMetrics])
 
   const personalMetrics = useMemo(() => {
     return calcularMetricasPersonales(visibleTasks)
@@ -478,8 +520,11 @@ export default function DashboardPage() {
 
         {isAdmin && (
           <DashboardFilters
+            currentDeveloperId={developerIdFilter}
             currentPeriod={periodFilter}
             currentProjectId={projectIdFilter}
+            developerOptions={developerOptions}
+            onChangeDeveloper={setDeveloperIdFilter}
             onChangePeriod={setPeriodFilter}
             onChangeProject={setProjectIdFilter}
             projectOptions={visibleProjects}

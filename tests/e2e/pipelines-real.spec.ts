@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { mockPortalApi, portalMockIds } from './portal-api-mocks'
 
 function formatDateOffset(daysFromToday: number) {
   const date = new Date()
@@ -58,14 +59,20 @@ async function createTaskForAssignee(
 }
 
 test.describe('Pipelines reales del portal', () => {
-  test('pipeline admin: crea proyecto, agrega tareas y las asigna a developers', async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
+    await mockPortalApi(page)
+  })
+
+  test('pipeline admin: crea proyecto, agrega tareas y las asigna con IDs reales', async ({
+    page,
+  }) => {
     const suffix = Date.now()
     const projectName = `Proyecto admin pipeline ${suffix}`
     const ianTask = `Tarea Ian ${suffix}`
     const santiTask = `Tarea Santiago ${suffix}`
 
     await page.goto('/')
-    await switchDemoUser(page, 'usuario-admin-jose')
+    await switchDemoUser(page, portalMockIds.admin)
 
     await createProject(
       page,
@@ -79,7 +86,7 @@ test.describe('Pipelines reales del portal', () => {
     await createTaskForAssignee(page, {
       taskName: ianTask,
       description: 'Tarea real asignada a Ian desde el pipeline admin.',
-      assigneeId: 'usuario-dev-ian',
+      assigneeId: portalMockIds.ian,
       projectName,
       dueInDays: 2,
     })
@@ -87,7 +94,7 @@ test.describe('Pipelines reales del portal', () => {
     await createTaskForAssignee(page, {
       taskName: santiTask,
       description: 'Tarea real asignada a Santiago desde el pipeline admin.',
-      assigneeId: 'usuario-dev-santiago',
+      assigneeId: portalMockIds.santiago,
       projectName,
       dueInDays: 4,
     })
@@ -105,52 +112,41 @@ test.describe('Pipelines reales del portal', () => {
     await expect(santiRow).toContainText(projectName)
   })
 
-  test('pipeline developer: se une a proyecto, ve su tarea y empieza el timer', async ({ page }) => {
+  test('pipeline developer: ve tarea, completa con horas reales y dashboard actualiza KPIs', async ({
+    page,
+  }) => {
     const suffix = Date.now()
     const projectName = `Proyecto dev pipeline ${suffix}`
     const taskName = `Tarea dev pipeline ${suffix}`
     const taskDescription =
-      'Tarea real para validar que el developer puede unirse, ver el detalle y empezar el timer.'
+      'Tarea real para validar que el developer ve el detalle y completa con horas reales.'
 
     await page.goto('/')
-    await switchDemoUser(page, 'usuario-admin-jose')
+    await switchDemoUser(page, portalMockIds.admin)
 
     await createProject(
       page,
       projectName,
-      'Proyecto creado para validar onboarding del developer en ambiente real del portal.',
+      'Proyecto creado para validar el flujo developer en ambiente real del portal.',
     )
 
-    await page.getByRole('button', { name: 'Codigos de acceso' }).click()
-    const projectRow = page.locator('tbody tr').filter({ hasText: projectName })
-    await expect(projectRow).toHaveCount(1)
-    const accessCode = (await projectRow.locator('td').nth(1).innerText()).trim()
-    expect(accessCode).not.toBe('')
-
-    await switchDemoUser(page, 'usuario-dev-ian')
-    await expect(page.getByText('Ingresar codigo')).toBeVisible()
-    await page.getByLabel('Codigo de acceso').fill(accessCode)
-    await page.getByRole('button', { name: 'Unirme al proyecto' }).click()
-
-    await expect(page.getByText(`Acceso concedido a ${projectName}.`)).toBeVisible()
-    await expect(page.getByText(projectName, { exact: true })).toBeVisible()
-
-    await switchDemoUser(page, 'usuario-admin-jose')
     await page.getByRole('button', { name: 'Tareas' }).click()
+    await expect(page.getByRole('heading', { name: 'Tareas', level: 1 })).toBeVisible()
 
     await createTaskForAssignee(page, {
       taskName,
       description: taskDescription,
-      assigneeId: 'usuario-dev-ian',
+      assigneeId: portalMockIds.ian,
       projectName,
       dueInDays: 2,
     })
 
-    await switchDemoUser(page, 'usuario-dev-ian')
+    await switchDemoUser(page, portalMockIds.ian)
     await page.getByLabel('Busqueda').fill(taskName)
 
     const developerTaskRow = page.locator('tbody tr').filter({ hasText: taskName })
     await expect(developerTaskRow).toHaveCount(1)
+    await expect(developerTaskRow).toContainText('Ian Leon')
 
     await developerTaskRow
       .getByRole('button', { name: `Ver descripcion completa de ${taskName}` })
@@ -159,15 +155,35 @@ test.describe('Pipelines reales del portal', () => {
     const detailDialog = page.getByRole('dialog')
     await expect(detailDialog).toBeVisible()
     await expect(detailDialog.getByText(taskDescription)).toBeVisible()
-    await expect(detailDialog.getByText('Tracking profesional')).toBeVisible()
+    await expect(detailDialog.getByText('Registro de horas')).toBeVisible()
     await expect(detailDialog.getByText('Tiempo registrado')).toBeVisible()
+    await expect(detailDialog.getByRole('button', { name: 'Iniciar sesion' })).toHaveCount(0)
+    await detailDialog.getByRole('button', { name: 'Cerrar' }).click()
 
-    await detailDialog.getByRole('button', { name: 'Iniciar sesion' }).click()
-    await expect(page.getByText('Sesion de trabajo iniciada.')).toBeVisible()
-    await expect(detailDialog.getByText('Sesion activa')).toBeVisible()
-    await expect(detailDialog.getByRole('button', { name: 'Detener sesion' })).toBeVisible()
+    await developerTaskRow.locator('select').selectOption('completada')
 
-    await expect(developerTaskRow).toContainText('Sesion activa')
-    await expect(developerTaskRow.locator('select')).toHaveValue('en_progreso')
+    const completeDialog = page.getByRole('dialog', { name: 'Registrar horas reales' })
+    await expect(completeDialog).toBeVisible()
+    await completeDialog.getByLabel('Horas reales').fill('4.5')
+    await completeDialog.getByRole('button', { name: 'Marcar completada' }).click()
+
+    await expect(
+      page.getByText('La tarea fue marcada como completada y las horas reales fueron registradas.'),
+    ).toBeVisible()
+    await expect(developerTaskRow).toContainText('Completada')
+    await expect(developerTaskRow).toContainText('4.50 h')
+
+    await switchDemoUser(page, portalMockIds.admin)
+    await page.getByRole('button', { name: 'Dashboard' }).click()
+    await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible()
+
+    await expect(page.getByText('Tasks completed', { exact: true })).toBeVisible()
+    await expect(page.getByText('Hours worked', { exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '4.5 h' })).toBeVisible()
+
+    const developerFilter = page.getByLabel('Developer', { exact: true })
+    await developerFilter.selectOption(portalMockIds.ian)
+    await expect(developerFilter).toHaveValue(portalMockIds.ian)
+    await expect(page.getByRole('heading', { name: '4.5 h' })).toBeVisible()
   })
 })
