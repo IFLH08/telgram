@@ -16,6 +16,8 @@ public class SessionManager {
 
     public enum State {
         IDLE,
+        WAITING_FOR_PROJECT_CODE,
+        WAITING_FOR_SPRINT_SELECTION,
         WAITING_FOR_MISSING_DATA,
         WAITING_FOR_CONFIRMATION,
         WAITING_FOR_REAL_HOURS
@@ -26,6 +28,14 @@ public class SessionManager {
         private List<Tarea> draftTareas = new ArrayList<>();
         private String missingFieldsMessage = "";
         private Long pendingTaskId;
+        private Long pendingAssigneeId;
+        private String pendingAssigneeName = "";
+        private String pendingTaskDescription = "";
+        private Long pendingProjectId;
+        private String pendingProjectCode = "";
+        private String pendingProjectName = "";
+        private Long pendingSprintId;
+        private String pendingSprintName = "";
 
         public State getState() { return state; }
         public void setState(State state) { this.state = state; }
@@ -38,6 +48,30 @@ public class SessionManager {
 
         public Long getPendingTaskId() { return pendingTaskId; }
         public void setPendingTaskId(Long pendingTaskId) { this.pendingTaskId = pendingTaskId; }
+
+        public Long getPendingAssigneeId() { return pendingAssigneeId; }
+        public void setPendingAssigneeId(Long pendingAssigneeId) { this.pendingAssigneeId = pendingAssigneeId; }
+
+        public String getPendingAssigneeName() { return pendingAssigneeName; }
+        public void setPendingAssigneeName(String pendingAssigneeName) { this.pendingAssigneeName = pendingAssigneeName; }
+
+        public String getPendingTaskDescription() { return pendingTaskDescription; }
+        public void setPendingTaskDescription(String pendingTaskDescription) { this.pendingTaskDescription = pendingTaskDescription; }
+
+        public Long getPendingProjectId() { return pendingProjectId; }
+        public void setPendingProjectId(Long pendingProjectId) { this.pendingProjectId = pendingProjectId; }
+
+        public String getPendingProjectCode() { return pendingProjectCode; }
+        public void setPendingProjectCode(String pendingProjectCode) { this.pendingProjectCode = pendingProjectCode; }
+
+        public String getPendingProjectName() { return pendingProjectName; }
+        public void setPendingProjectName(String pendingProjectName) { this.pendingProjectName = pendingProjectName; }
+
+        public Long getPendingSprintId() { return pendingSprintId; }
+        public void setPendingSprintId(Long pendingSprintId) { this.pendingSprintId = pendingSprintId; }
+
+        public String getPendingSprintName() { return pendingSprintName; }
+        public void setPendingSprintName(String pendingSprintName) { this.pendingSprintName = pendingSprintName; }
     }
 
     private final Map<Long, UserSession> sessions = new HashMap<>();

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProyectoRepository extends JpaRepository<Proyecto, Long> {
     boolean existsByCodigoAcceso(String codigoAcceso);
+    Proyecto findByCodigoAcceso(String codigoAcceso);
 
     @Query("SELECT COALESCE(MAX(p.idProyecto), 0) FROM Proyecto p")
     Long findMaxIdProyecto();
