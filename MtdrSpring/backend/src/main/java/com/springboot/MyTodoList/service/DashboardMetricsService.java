@@ -19,6 +19,12 @@ public class DashboardMetricsService {
     }
 
     public List<DashboardSprintDeveloperMetricDTO> getSprintDeveloperMetricsFiltered(Long sprintId, Long developerId) {
-        return tareaRepository.findSprintDeveloperMetricsFiltered(sprintId, developerId);
+        if (sprintId != null && developerId != null) {
+            return tareaRepository.findSprintDeveloperMetricsBySprintAndDeveloper(sprintId, developerId);
+        }
+        if (sprintId != null) {
+            return tareaRepository.findSprintDeveloperMetricsBySprint(sprintId);
+        }
+        return tareaRepository.findSprintDeveloperMetricsByDeveloper(developerId);
     }
 }
