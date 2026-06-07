@@ -800,12 +800,7 @@ function snapshotActual(): PortalSnapshot {
 }
 
 export async function obtenerPortalSnapshot(): Promise<PortalSnapshot> {
-  try {
-    return await obtenerPortalSnapshotApi()
-  } catch (error) {
-    console.warn('Usando datos mock porque no se pudo cargar el snapshot real.', error)
-    return Promise.resolve(snapshotActual())
-  }
+  return obtenerPortalSnapshotApi()
 }
 
 export async function obtenerDashboardMetrics(): Promise<PortalDashboardMetric[]> {
@@ -813,11 +808,17 @@ export async function obtenerDashboardMetrics(): Promise<PortalDashboardMetric[]
   return Array.isArray(metrics) ? metrics.map(mapDashboardMetricApi) : []
 }
 
-export async function obtenerSprintDeveloperMetrics(): Promise<PortalSprintDeveloperMetric[]> {
+export async function obtenerSprintDeveloperMetrics(
+  sprintId?: string,
+  developerId?: string,
+): Promise<PortalSprintDeveloperMetric[]> {
+  const params = new URLSearchParams()
+  if (sprintId) params.set('sprintId', sprintId)
+  if (developerId) params.set('developerId', developerId)
+  const query = params.toString() ? `?${params.toString()}` : ''
   const metrics = await fetchJson<ApiSprintDeveloperMetric[]>(
-    '/api/dashboard/sprint-developer-metrics',
+    `/api/dashboard/sprint-developer-metrics${query}`,
   )
-
   return Array.isArray(metrics) ? metrics.map(mapSprintDeveloperMetricApi) : []
 }
 

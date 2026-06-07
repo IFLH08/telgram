@@ -17,4 +17,8 @@ public class DashboardMetricsService {
     public List<DashboardSprintDeveloperMetricDTO> getSprintDeveloperMetrics() {
         return tareaRepository.findSprintDeveloperMetrics();
     }
+
+    public List<DashboardSprintDeveloperMetricDTO> getSprintDeveloperMetricsFiltered(Long sprintId, Long developerId) {
+        return tareaRepository.findSprintDeveloperMetricsFiltered(sprintId, developerId);
+    }
 }

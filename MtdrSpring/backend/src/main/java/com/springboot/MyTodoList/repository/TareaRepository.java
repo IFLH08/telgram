@@ -60,4 +60,21 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
            "GROUP BY s.idSprint, s.nombre, s.fechaInicio, u.idUsuario, u.nombre " +
            "ORDER BY s.fechaInicio ASC, s.idSprint ASC, u.nombre ASC")
     List<DashboardSprintDeveloperMetricDTO> findSprintDeveloperMetrics();
+
+    @Query("SELECT new com.springboot.MyTodoList.dto.DashboardSprintDeveloperMetricDTO(" +
+           "s.idSprint, s.nombre, u.idUsuario, u.nombre, " +
+           "SUM(CASE WHEN UPPER(e.nombreEstado) = 'COMPLETADA' OR UPPER(e.nombreEstado) = 'COMPLETADO' OR UPPER(e.nombreEstado) = 'DONE' OR UPPER(e.nombreEstado) = 'COMPLETED' THEN 1L ELSE 0L END), " +
+           "COALESCE(SUM(t.horasReales), 0.0)) " +
+           "FROM Tarea t " +
+           "JOIN t.sprint s " +
+           "JOIN t.usuarioAsignado u " +
+           "LEFT JOIN t.estado e " +
+           "WHERE t.eliminada = false " +
+           "AND (:sprintId IS NULL OR s.idSprint = :sprintId) " +
+           "AND (:developerId IS NULL OR u.idUsuario = :developerId) " +
+           "GROUP BY s.idSprint, s.nombre, s.fechaInicio, u.idUsuario, u.nombre " +
+           "ORDER BY s.fechaInicio ASC, s.idSprint ASC, u.nombre ASC")
+    List<DashboardSprintDeveloperMetricDTO> findSprintDeveloperMetricsFiltered(
+            @Param("sprintId") Long sprintId,
+            @Param("developerId") Long developerId);
 }
