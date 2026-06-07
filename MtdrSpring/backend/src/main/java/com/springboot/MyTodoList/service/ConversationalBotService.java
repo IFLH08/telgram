@@ -623,7 +623,23 @@ public class ConversationalBotService {
                 "🧠 Procesando petición resumida y evaluando límites de tiempo (máx 4h según buenas prácticas)...",
                 telegramClient, null);
 
-        String prompt = "Resume esta tarea en formato JSON. Genera nombre, descripcion, horasEstimadas y idPrioridad (1 baja, 2 media, 3 alta). IMPORTANTE: La regla de Oracle indica que ninguna tarea debe tener un estimado mayor a 4 horas. Si el requerimiento excede las 4 horas, debes subdividir lógicamente la tarea en múltiples subtareas (cada una de máximo 4 horas). Debes devolver el resultado ESTRICTAMENTE como un ARREGLO JSON (incluso si es una sola tarea): [{\"nombre\": \"...\", \"descripcion\": \"...\", \"horasEstimadas\": X, \"idPrioridad\": Y}]. Responde puro JSON:\n"
+        String retrievedContext = "";
+        try {
+            var similarDocs = deepSeekService.findRelevantToDoDescriptions(requestText, 3);
+            if (!similarDocs.isEmpty()) {
+                StringBuilder contextBuilder = new StringBuilder();
+                contextBuilder.append("Contexto relevante recuperado de tareas existentes en Oracle:\n");
+                for (int i = 0; i < similarDocs.size(); i++) {
+                    contextBuilder.append("- ").append(similarDocs.get(i)).append("\n");
+                }
+                retrievedContext = contextBuilder.toString() + "\n";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        String prompt = retrievedContext +
+                "Resume esta tarea en formato JSON. Genera nombre, descripcion, horasEstimadas y idPrioridad (1 baja, 2 media, 3 alta). IMPORTANTE: La regla de Oracle indica que ninguna tarea debe tener un estimado mayor a 4 horas. Si el requerimiento excede las 4 horas, debes subdividir lógicamente la tarea en múltiples subtareas (cada una de máximo 4 horas). Debes devolver el resultado ESTRICTAMENTE como un ARREGLO JSON (incluso si es una sola tarea): [{\"nombre\": \"...\", \"descripcion\": \"...\", \"horasEstimadas\": X, \"idPrioridad\": Y}]. Responde puro JSON:\n"
                 + requestText;
         String llmRawResponse = "";
 

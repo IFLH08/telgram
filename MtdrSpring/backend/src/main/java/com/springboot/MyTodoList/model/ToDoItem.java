@@ -22,6 +22,9 @@ public class ToDoItem {
     @Column(name = "done")
     boolean done;
 
+    @Transient
+    String insightVector;
+
     public ToDoItem() {
 
     }
@@ -63,6 +66,14 @@ public class ToDoItem {
 
     public void setDone(boolean done) {
         this.done = done;
+    }
+
+    public String getInsightVector() {
+        return insightVector;
+    }
+
+    public void setInsightVector(String insightVector) {
+        this.insightVector = insightVector;
     }
 
     @Override

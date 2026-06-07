@@ -16,7 +16,7 @@
 	<properties>
 		<java.version>11</java.version>
 		<version.lib.ojdbc>21.1.0.0</version.lib.ojdbc>
-		<frontend-src-dir>${project.basedir}/src/main/frontend</frontend-src-dir>
+		<frontend-src-dir>${project.basedir}/../../</frontend-src-dir>
 		<node.version>v23.9.0</node.version>
 		<npm.version>8.1.2</npm.version>
 	</properties>
@@ -62,6 +62,21 @@
 			<type>pom</type>
 		</dependency>
 		<dependency>
+			<groupId>com.oracle.database.security</groupId>
+			<artifactId>oraclepki</artifactId>
+			<version>21.5.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.oracle.database.security</groupId>
+			<artifactId>osdt_core</artifactId>
+			<version>21.5.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.oracle.database.security</groupId>
+			<artifactId>osdt_cert</artifactId>
+			<version>21.5.0.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>			
 		</dependency>
@@ -84,6 +99,15 @@
 			<version>9.1.0</version>
 		</dependency>
 		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>33.0.0-jre</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<version>1.18.30</version>
@@ -98,6 +122,7 @@
 				<artifactId>frontend-maven-plugin</artifactId>
 				<version>1.9.1</version>
 				<configuration>
+					<skip>true</skip>
 					<nodeVersion>${node.version}</nodeVersion>
 					<npmVersion>${npm.version}</npmVersion>
 					<workingDirectory>${frontend-src-dir}</workingDirectory>
@@ -140,10 +165,10 @@
 						</goals>
 						<phase>prepare-package</phase>
 						<configuration>
-							<outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
+						<outputDirectory>${project.build.outputDirectory}/static/portal</outputDirectory>
 							<resources>
 								<resource>
-									<directory>${frontend-src-dir}/build</directory>
+									<directory>${frontend-src-dir}/dist</directory>
 									<filtering>false</filtering>
 								</resource>
 							</resources>

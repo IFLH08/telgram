@@ -30,13 +30,18 @@ public class OracleConfiguration {
     @Bean
     public DataSource dataSource() throws SQLException{
         OracleDataSource ds = new OracleDataSource();
-        ds.setDriverType(env.getProperty("driver_class_name"));
-        logger.info("Using Driver " + env.getProperty("driver_class_name"));
-        ds.setURL(env.getProperty("db_url"));
-        logger.info("Using URL: " + env.getProperty("db_url"));
-        ds.setUser(env.getProperty("db_user"));
-        logger.info("Using Username " + env.getProperty("db_user"));
-        ds.setPassword(env.getProperty("dbpassword"));
+        String url = firstNonBlank(env.getProperty("spring.datasource.url"), env.getProperty("DB_URL"),
+                env.getProperty("db_url"), dbSettings.getUrl());
+        String username = firstNonBlank(env.getProperty("spring.datasource.username"), env.getProperty("DB_USER"),
+                env.getProperty("db_user"), dbSettings.getUsername());
+        String password = firstNonBlank(env.getProperty("spring.datasource.password"), env.getProperty("DB_PASSWORD"),
+                env.getProperty("dbpassword"), dbSettings.getPassword());
+
+        ds.setURL(url);
+        logger.info("Using URL: " + url);
+        ds.setUser(username);
+        logger.info("Using Username " + username);
+        ds.setPassword(password);
 //        For local testing
 //        ds.setDriverType(dbSettings.getDriver_class_name());
 //        logger.info("Using Driver " + dbSettings.getDriver_class_name());
@@ -46,5 +51,14 @@ public class OracleConfiguration {
 //        logger.info("Using Username: " + dbSettings.getUsername());
 //        ds.setPassword(dbSettings.getPassword());
         return ds;
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
     }
 }

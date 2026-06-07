@@ -68,7 +68,7 @@ case "`uname`" in
       fi
     fi
     ;;
-esac
+esac 
 
 if [ -z "$JAVA_HOME" ] ; then
   if [ -r /etc/gentoo-release ] ; then
