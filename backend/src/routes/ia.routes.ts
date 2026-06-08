@@ -4,6 +4,7 @@ import { GoogleGenAI } from '@google/genai'
 const router = Router()
 
 const apiKey = process.env.GEMINI_API_KEY
+const model = process.env.DEEPSEEK_CHAT_MODEL || process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 
 if (!apiKey) {
     console.warn('⚠️ GEMINI_API_KEY no está definida en el entorno.')
@@ -30,7 +31,7 @@ router.post('/generar', async (req, res) => {
         }
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model,
             contents: prompt.trim(),
         })
 
