@@ -15,8 +15,6 @@ import {
   crearPortalProject,
   crearPortalTask,
   eliminarPortalTask,
-  detenerPortalTaskSession,
-  iniciarPortalTaskSession,
   regenerarPortalAccessCode,
   obtenerPortalSnapshot,
   unirUsuarioAProyectoConCodigo,
@@ -42,8 +40,6 @@ interface PortalContextValue extends PortalState {
     status: PortalTask['estatus'],
     horasReales?: number,
   ) => Promise<PortalTask>
-  startTaskSession: (taskId: string, userId: string) => Promise<PortalTask>
-  stopTaskSession: (taskId: string, userId: string) => Promise<PortalTask>
   deleteTask: (taskId: string) => Promise<void>
   createProject: (input: PortalProjectInput) => Promise<PortalProject>
   generateAccessCode: (projectId: string) => Promise<PortalProject>
@@ -122,24 +118,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
     [refreshSnapshot],
   )
 
-  const startTaskSession = useCallback(
-    async (taskId: string, userId: string) => {
-      const task = await iniciarPortalTaskSession(taskId, userId)
-      await refreshSnapshot()
-      return task
-    },
-    [refreshSnapshot],
-  )
-
-  const stopTaskSession = useCallback(
-    async (taskId: string, userId: string) => {
-      const task = await detenerPortalTaskSession(taskId, userId)
-      await refreshSnapshot()
-      return task
-    },
-    [refreshSnapshot],
-  )
-
   const deleteTask = useCallback(
     async (taskId: string) => {
       await eliminarPortalTask(taskId)
@@ -181,8 +159,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       createTask,
       updateTask,
       updateTaskStatus,
-      startTaskSession,
-      stopTaskSession,
       deleteTask,
       createProject,
       generateAccessCode,
@@ -193,8 +169,6 @@ export function PortalProvider({ children }: { children: ReactNode }) {
       createTask,
       updateTask,
       updateTaskStatus,
-      startTaskSession,
-      stopTaskSession,
       deleteTask,
       createProject,
       generateAccessCode,

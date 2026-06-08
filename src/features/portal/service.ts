@@ -746,6 +746,7 @@ function mapSprintDeveloperMetricApi(
 function payloadTareaApi(input: PortalTaskInput): Partial<ApiTarea> {
   const sprintId = Number(input.sprintId)
   const usuarioAsignadoId = Number(input.personaAsignadaId)
+  const horasReales = input.horasReales ?? 0
 
   if (!input.sprintId.trim() || !Number.isFinite(sprintId) || sprintId <= 0) {
     throw new Error('El sprint seleccionado no tiene un ID valido para guardar en la base de datos.')
@@ -755,12 +756,16 @@ function payloadTareaApi(input: PortalTaskInput): Partial<ApiTarea> {
     throw new Error('El responsable seleccionado no tiene un ID valido para guardar en la base de datos.')
   }
 
+  if (input.estatus === 'completada' && horasReales <= 0) {
+  throw new Error('Una tarea completada debe registrar horas reales mayores a cero.')
+}
+
   return {
     nombre: input.nombre.trim(),
     descripcion: input.descripcion.trim(),
     fechaEntrega: `${input.fechaEntrega}T00:00:00`,
     horasEstimadas: input.horasEstimadas,
-    horasReales: input.horasReales,
+    horasReales,
     puntosHistoria: input.puntosHistoria,
     estado: estadoParaApi(input.estatus),
     prioridad: prioridadParaApi(input.prioridad),
@@ -1043,74 +1048,23 @@ export async function iniciarPortalTaskSession(
   taskId: string,
   userId: string,
 ): Promise<PortalTask> {
-  const actual = tasksDb.find((task) => task.id === taskId)
-  const usuario = obtenerUsuarioPorId(userId)
-
-  if (!actual || !usuario) {
-    throw new Error('No se pudo iniciar la sesion de trabajo.')
-  }
-
-  if (actual.personaAsignadaId !== userId) {
-    throw new Error('Solo la persona asignada puede iniciar sesiones de trabajo.')
-  }
-
-  if (actual.estatus === 'completada' || actual.estatus === 'cancelada') {
-    throw new Error('La tarea debe estar activa para iniciar una sesion de trabajo.')
-  }
-
-  if (obtenerSesionActiva(actual)) {
-    throw new Error('Ya existe una sesion de trabajo activa para esta tarea.')
-  }
-
-  const ahoraActual = formatoFechaHora(new Date())
-  const actualizada = sincronizarTimeTracking({
-    ...actual,
-    estatus: 'en_progreso',
-    sesionesTrabajo: [
-      ...actual.sesionesTrabajo,
-      crearSesionTrabajo({
-        iniciadaEn: ahoraActual,
-        iniciadaPorUsuarioId: userId,
-        iniciadaPorNombre: usuario.nombreCompleto,
-      }),
-    ],
-    actualizadoEn: ahoraActual,
-  })
-
-  tasksDb = tasksDb.map((task) => (task.id === taskId ? actualizada : task))
-  registrarCambioEstado(actualizada, actual.estatus)
-  return Promise.resolve(clonar(actualizada))
+  void taskId
+  void userId
+  throw new Error(
+    'Las sesiones de trabajo web no tienen un endpoint real disponible. Completa la tarea registrando horas reales.',
+  )
 }
 
 export async function detenerPortalTaskSession(
   taskId: string,
   userId: string,
 ): Promise<PortalTask> {
-  const actual = tasksDb.find((task) => task.id === taskId)
-
-  if (!actual) {
-    throw new Error('La tarea no existe.')
-  }
-
-  if (actual.personaAsignadaId !== userId) {
-    throw new Error('Solo la persona asignada puede detener sesiones de trabajo.')
-  }
-
-  if (!obtenerSesionActiva(actual)) {
-    throw new Error('No hay una sesion activa para detener.')
-  }
-
-  const ahoraActual = formatoFechaHora(new Date())
-  const actualizada = sincronizarTimeTracking({
-    ...actual,
-    sesionesTrabajo: cerrarSesionActiva(actual, ahoraActual, userId),
-    actualizadoEn: ahoraActual,
-  })
-
-  tasksDb = tasksDb.map((task) => (task.id === taskId ? actualizada : task))
-  return Promise.resolve(clonar(actualizada))
+  void taskId
+  void userId
+  throw new Error(
+    'Las sesiones de trabajo web no tienen un endpoint real disponible. Completa la tarea registrando horas reales.',
+  )
 }
-
 export async function eliminarPortalTask(taskId: string): Promise<void> {
   await fetchJson<void>(`/api/tareas/${taskId}`, {
     method: 'DELETE',
