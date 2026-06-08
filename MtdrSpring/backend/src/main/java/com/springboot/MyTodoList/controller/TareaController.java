@@ -210,6 +210,9 @@ public class TareaController {
         if ("IN PROGRESS".equals(value) || "EN_PROGRESO".equals(value) || "EN PROGRESO".equals(value)) {
             return "En progreso";
         }
+        if ("PAUSED".equals(value) || "PAUSADA".equals(value) || "PAUSADO".equals(value)) {
+            return "Pausada";
+        }
         if ("COMPLETED".equals(value) || "DONE".equals(value) || "COMPLETADA".equals(value) || "COMPLETADO".equals(value)) {
             return "Completada";
         }
