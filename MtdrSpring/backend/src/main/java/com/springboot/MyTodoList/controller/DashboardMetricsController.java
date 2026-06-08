@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
@@ -40,8 +41,13 @@ public class DashboardMetricsController {
     }
 
     @GetMapping("/sprint-developer-metrics")
-    public List<DashboardSprintDeveloperMetricDTO> getSprintDeveloperMetrics() {
-        return dashboardMetricsService.getSprintDeveloperMetrics();
+    public List<DashboardSprintDeveloperMetricDTO> getSprintDeveloperMetrics(
+            @RequestParam(required = false) Long sprintId,
+            @RequestParam(required = false) Long developerId) {
+        if (sprintId == null && developerId == null) {
+            return dashboardMetricsService.getSprintDeveloperMetrics();
+        }
+        return dashboardMetricsService.getSprintDeveloperMetricsFiltered(sprintId, developerId);
     }
 
     @GetMapping("/metrics")

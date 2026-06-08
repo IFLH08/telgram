@@ -5,4 +5,12 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || '/portal/',
   plugins: [react(), tailwindcss()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
+  },
 })
