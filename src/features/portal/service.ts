@@ -746,6 +746,7 @@ function mapSprintDeveloperMetricApi(
 function payloadTareaApi(input: PortalTaskInput): Partial<ApiTarea> {
   const sprintId = Number(input.sprintId)
   const usuarioAsignadoId = Number(input.personaAsignadaId)
+  const horasReales = input.horasReales ?? 0
 
   if (!input.sprintId.trim() || !Number.isFinite(sprintId) || sprintId <= 0) {
     throw new Error('El sprint seleccionado no tiene un ID valido para guardar en la base de datos.')
@@ -755,12 +756,16 @@ function payloadTareaApi(input: PortalTaskInput): Partial<ApiTarea> {
     throw new Error('El responsable seleccionado no tiene un ID valido para guardar en la base de datos.')
   }
 
+  if (input.estatus === 'completada' && horasReales <= 0) {
+    throw new Error('Una tarea completada debe registrar horas reales mayores a cero.')
+  }
+
   return {
     nombre: input.nombre.trim(),
     descripcion: input.descripcion.trim(),
     fechaEntrega: `${input.fechaEntrega}T00:00:00`,
     horasEstimadas: input.horasEstimadas,
-    horasReales: input.horasReales,
+    horasReales,
     puntosHistoria: input.puntosHistoria,
     estado: estadoParaApi(input.estatus),
     prioridad: prioridadParaApi(input.prioridad),
@@ -1042,6 +1047,15 @@ export async function iniciarPortalTaskSession(
   taskId: string,
   userId: string,
 ): Promise<PortalTask> {
+  void taskId
+  void userId
+  throw new Error('Las sesiones de trabajo web no tienen un endpoint real disponible. Completa la tarea registrando horas reales.')
+}
+
+async function iniciarPortalTaskSessionMock(
+  taskId: string,
+  userId: string,
+): Promise<PortalTask> {
   const actual = tasksDb.find((task) => task.id === taskId)
   const usuario = obtenerUsuarioPorId(userId)
 
@@ -1082,6 +1096,15 @@ export async function iniciarPortalTaskSession(
 }
 
 export async function detenerPortalTaskSession(
+  taskId: string,
+  userId: string,
+): Promise<PortalTask> {
+  void taskId
+  void userId
+  throw new Error('Las sesiones de trabajo web no tienen un endpoint real disponible. Completa la tarea registrando horas reales.')
+}
+
+async function detenerPortalTaskSessionMock(
   taskId: string,
   userId: string,
 ): Promise<PortalTask> {
