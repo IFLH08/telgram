@@ -1033,7 +1033,11 @@ async function actualizarPortalTaskStatusMock(
     )
   }
 
-  const sincronizada = sincronizarTimeTracking(actualizada)
+  const sincronizadaBase = sincronizarTimeTracking(actualizada)
+  const sincronizada =
+    horasReales === undefined
+      ? sincronizadaBase
+      : { ...sincronizadaBase, horasReales }
   tasksDb = tasksDb.map((task) => (task.id === taskId ? sincronizada : task))
   registrarCambioEstado(sincronizada, actual.estatus)
   return Promise.resolve(clonar(sincronizada))
