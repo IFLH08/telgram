@@ -6,6 +6,8 @@ public enum BotLabels {
 	HIDE_MAIN_SCREEN("Hide Main Screen"),
 	LIST_ALL_ITEMS("List All Items"), 
 	ADD_NEW_ITEM("Add New Item"),
+	PAUSE_TASK("PAUSAR"),
+	RESUME_TASK("REANUDAR"),
 	DONE("DONE"),
 	UNDO("UNDO"),
 	DELETE("DELETE"),
