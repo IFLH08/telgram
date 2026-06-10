@@ -715,7 +715,18 @@ function mapTareaApi(tarea: ApiTarea): PortalTask {
     horasReales: tarea.horasReales ?? 0,
     fechaInicioReal: tarea.fechaInicioReal,
     fechaFinReal: tarea.fechaFinReal,
-    sesionesTrabajo: [],
+    sesionesTrabajo: tarea.fechaInicioReal && !tarea.fechaFinReal
+      ? [
+          {
+            id: `sesion-api-${tarea.idTarea}`,
+            iniciadaEn: tarea.fechaInicioReal,
+            finalizadaEn: undefined,
+            duracionSegundos: 0,
+            iniciadaPorUsuarioId: personaId,
+            iniciadaPorNombre: tarea.usuarioAsignado?.nombre ?? 'Sin asignar',
+          },
+        ]
+      : [],
     actualizadoEn: tarea.fechaCreacion ?? new Date().toISOString(),
   }
 }
@@ -765,7 +776,7 @@ function payloadTareaApi(input: PortalTaskInput): Partial<ApiTarea> {
     fechaEntrega: `${input.fechaEntrega}T00:00:00`,
     horasEstimadas: input.horasEstimadas,
     horasReales: input.horasReales,
-    puntosHistoria: input.puntosHistoria,
+    puntosHistoria: input.puntosHistoria > 0 ? input.puntosHistoria : undefined,
     estado: estadoParaApi(input.estatus),
     prioridad: prioridadParaApi(input.prioridad),
     sprint: { idSprint: sprintId, nombre: '' },
