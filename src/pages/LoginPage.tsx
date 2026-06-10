@@ -29,22 +29,17 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
   return (
     <main className="min-h-screen bg-[#FBFAF8] px-6 py-10 text-[#161513]">
-      <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-5xl items-center justify-center">
-        <div className="grid w-full gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
-          <section className="space-y-4">
-            <p className={cx(TYPO.CAPTION, 'uppercase tracking-[0.08em]')}>
-              Portal de administracion
-            </p>
-            <h1 className="text-[32px] font-medium leading-tight text-[#161513]">
-              DevTracker
-            </h1>
-            <p className={cx(TYPO.BODY_MUTED, 'max-w-xl')}>
-              Accede con tu nombre de usuario y contrasena para consultar tareas,
-              proyectos, codigos de acceso y metricas del equipo.
-            </p>
-          </section>
+      <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-md flex-col items-center justify-center gap-6">
+        <div className="space-y-2 text-center">
+          <p className={cx(TYPO.CAPTION, 'uppercase tracking-[0.08em]')}>
+            Portal de administracion
+          </p>
+          <h1 className="text-[36px] font-medium leading-tight text-[#161513]">
+            DevTracker
+          </h1>
+        </div>
 
-          <Card padding="lg">
+          <Card padding="lg" className="w-full">
             <CardHeader>
               <CardTitle>Iniciar sesion</CardTitle>
               <p className={TYPO.BODY_MUTED}>
@@ -91,7 +86,6 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               </form>
             </CardContent>
           </Card>
-        </div>
       </div>
     </main>
   )

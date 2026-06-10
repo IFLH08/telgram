@@ -385,13 +385,18 @@ public class ConversationalBotService {
                 return;
             }
 
-            EstadoTarea estado = estadoTareaRepository.findByNombreEstado("Completada");
+            EstadoTarea estado = resolveEstado("Completada", "COMPLETED", "DONE");
             if (estado == null) {
                 throw new IllegalStateException("No existe el estado Completada en la base de datos.");
             }
 
+            LocalDateTime now = LocalDateTime.now();
             task.setEstado(estado);
             task.setHorasReales(realHours);
+            if (task.getFechaInicioReal() == null) {
+                task.setFechaInicioReal(now);
+            }
+            task.setFechaFinReal(now);
             tareaRepository.save(task);
             sessionManager.clearSession(chatId);
 
@@ -442,7 +447,9 @@ public class ConversationalBotService {
         }
 
         String value = status.trim().toUpperCase(Locale.ROOT);
-        return "PAUSADA".equals(value) || "PAUSADO".equals(value) || "PAUSED".equals(value);
+        return "PAUSADA".equals(value) || "PAUSADO".equals(value) || "PAUSED".equals(value)
+                || "CANCELADA".equals(value) || "CANCELADO".equals(value) || "CANCELLED".equals(value)
+                || "CANCELED".equals(value);
     }
 
     private boolean isCompletedStatus(String status) {
@@ -538,6 +545,7 @@ public class ConversationalBotService {
             newUser.setTelegramId(chatId);
             newUser.setNombre("Telegram User " + chatId);
             newUser.setUsername("tg_" + chatId);
+            newUser.setContrasena("Telegram" + chatId + "!");
             newUser.setFechaRegistro(OffsetDateTime.now());
                 Rol rol = rolRepository.findByNombreRol("DESARROLLADOR");
                 if (rol == null) {
@@ -564,7 +572,7 @@ public class ConversationalBotService {
                 return;
             }
 
-            List<Tarea> allItems = tareaRepository.findByUsuarioAsignadoIdUsuario(user.getIdUsuario());
+            List<Tarea> allItems = tareaRepository.findVisibleByUsuarioAsignado(user.getIdUsuario());
 
             ReplyKeyboardMarkup keyboardMarkup = ReplyKeyboardMarkup.builder()
                     .resizeKeyboard(true)
@@ -579,8 +587,8 @@ public class ConversationalBotService {
                     .filter(t -> t.getEstado() != null && isCompletedStatus(t.getEstado().getNombreEstado()))
                     .collect(Collectors.toList());
 
-            if (activas.isEmpty()) {
-                BotHelper.sendMessageToTelegram(chatId, "No tienes tareas activas. Escribe /AddTask para crear una.",
+            if (allItems.isEmpty()) {
+                BotHelper.sendMessageToTelegram(chatId, "No tienes tareas asignadas en la base de datos.",
                         telegramClient, null);
                 return;
             }
@@ -598,6 +606,7 @@ public class ConversationalBotService {
                         "ID: " + item.getIdTarea() + " - " + (nombre.length() > 20 ? nombre.substring(0, 20) : nombre));
                 if (isPendingStatus(item.getEstado().getNombreEstado())) {
                     currentRow.add(item.getIdTarea() + "-INICIAR");
+                    currentRow.add(item.getIdTarea() + "-TERMINAR");
                 } else if (isInProgressStatus(item.getEstado().getNombreEstado())) {
                     currentRow.add(item.getIdTarea() + "-" + BotLabels.PAUSE_TASK.getLabel());
                     currentRow.add(item.getIdTarea() + "-TERMINAR");
@@ -615,7 +624,16 @@ public class ConversationalBotService {
 
             keyboardMarkup.setKeyboard(keyboard);
 
-            BotHelper.sendMessageToTelegram(chatId, "Tus tareas activas (Usa los botones para gestionarlas):",
+            StringBuilder message = new StringBuilder("Tus tareas asignadas:\n");
+            for (Tarea item : allItems) {
+                message.append(formatTaskLine(item)).append("\n");
+            }
+            if (!terminadas.isEmpty()) {
+                message.append("\nTerminadas: ").append(terminadas.size());
+            }
+
+            sendLongMessage(chatId, message.toString());
+            BotHelper.sendMessageToTelegram(chatId, "Usa los botones para reanudar, pausar o terminar tareas activas:",
                     telegramClient, keyboardMarkup);
         } catch (Exception e) {
             e.printStackTrace();
@@ -633,7 +651,7 @@ public class ConversationalBotService {
                         null);
                 return;
             }
-            EstadoTarea estado = estadoTareaRepository.findByNombreEstado("En progreso");
+            EstadoTarea estado = resolveEstado("En progreso", "IN PROGRESS", "EN_PROGRESO");
             if (estado == null) {
                 throw new IllegalStateException("No existe el estado En progreso en la base de datos.");
             }
@@ -673,7 +691,8 @@ public class ConversationalBotService {
                 return;
             }
 
-            EstadoTarea estado = resolveEstado("Pausada", "PAUSED", "Pausado");
+            EstadoTarea estado = resolveEstado("Pausada", "PAUSED", "Pausado", "Cancelada", "CANCELLED", "CANCELED",
+                    "Cancelado");
             if (estado == null) {
                 throw new IllegalStateException("No existe el estado Pausada en la base de datos.");
             }
@@ -746,33 +765,13 @@ public class ConversationalBotService {
                         null);
                 return;
             }
-            EstadoTarea estado = resolveEstado("Completada", "COMPLETED", "DONE");
-            if (estado == null) {
-                throw new IllegalStateException("No existe el estado Completada en la base de datos.");
-            }
-
-            LocalDateTime now = LocalDateTime.now();
-            Double trackedHours = calculateTrackedHours(t, now);
-            LocalDateTime firstStart = t.getFechaInicioReal();
-            if (firstStart == null) {
-                firstStart = t.getFechaFinReal();
-            }
-            if (firstStart == null) {
-                firstStart = now;
-            }
-
-            t.setEstado(estado);
-            t.setHorasReales(trackedHours);
-            t.setFechaInicioReal(firstStart);
-            t.setFechaFinReal(now);
-            tareaRepository.save(t);
-
+            SessionManager.UserSession session = sessionManager.getSession(chatId);
+            session.setState(SessionManager.State.WAITING_FOR_REAL_HOURS);
+            session.setPendingTaskId(id);
             BotHelper.sendMessageToTelegram(chatId,
-                    "Tarea " + id + " marcada como TERMINADA con " + formatNumber(trackedHours)
-                            + " horas reales acumuladas.",
+                    "Ingresa las horas reales para terminar la tarea " + id
+                            + ". Ejemplo: 3 o 2.5. Escribe cancelar para salir.",
                     telegramClient, null);
-            sessionManager.clearSession(chatId);
-            handleListAllTareas(chatId);
         } catch (Exception e) {
             e.printStackTrace();
             BotHelper.sendMessageToTelegram(chatId, "❌ Error al terminar tarea: " + e.getMessage(), telegramClient,

@@ -14,6 +14,15 @@ import org.springframework.data.jpa.repository.Query;
 public interface TareaRepository extends JpaRepository<Tarea, Long> {
     List<Tarea> findByUsuarioAsignadoIdUsuario(Long idUsuario);
 
+    @Query("SELECT t FROM Tarea t " +
+           "LEFT JOIN FETCH t.sprint " +
+           "LEFT JOIN FETCH t.estado " +
+           "LEFT JOIN FETCH t.usuarioAsignado " +
+           "LEFT JOIN FETCH t.prioridad " +
+           "WHERE t.eliminada = false " +
+           "ORDER BY t.fechaCreacion DESC, t.idTarea DESC")
+    List<Tarea> findAllVisible();
+
     @Query("SELECT COALESCE(MAX(t.idTarea), 0) FROM Tarea t")
     Long findMaxIdTarea();
 

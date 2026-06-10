@@ -154,6 +154,19 @@ function formatearNumero(valor: number, decimals = 0) {
   })
 }
 
+function calcularMediana(values: number[]) {
+  if (values.length === 0) {
+    return 0
+  }
+
+  const sorted = [...values].sort((left, right) => left - right)
+  const middle = Math.floor(sorted.length / 2)
+
+  return sorted.length % 2 === 0
+    ? (sorted[middle - 1] + sorted[middle]) / 2
+    : sorted[middle]
+}
+
 function KpiCard({
   label,
   value,
@@ -502,14 +515,40 @@ export default function DashboardPage() {
   }, [sprintDeveloperMetrics])
 
   const realKpiSummary = useMemo(() => {
+    const byDeveloper = new Map<string, { completedTasks: number; realHours: number }>()
+
+    for (const metric of sprintDeveloperMetrics) {
+      const current = byDeveloper.get(metric.developerId) ?? {
+        completedTasks: 0,
+        realHours: 0,
+      }
+
+      current.completedTasks += metric.completedTasks
+      current.realHours += metric.realHours
+      byDeveloper.set(metric.developerId, current)
+    }
+
+    const developerValues = Array.from(byDeveloper.values())
+    const developerCount = developerValues.length
+    const completedTasks = sprintDeveloperMetrics.reduce(
+      (total, metric) => total + metric.completedTasks,
+      0,
+    )
+    const realHours = sprintDeveloperMetrics.reduce(
+      (total, metric) => total + metric.realHours,
+      0,
+    )
+
     return {
-      completedTasks: sprintDeveloperMetrics.reduce(
-        (total, metric) => total + metric.completedTasks,
-        0,
+      completedTasks,
+      realHours,
+      averageCompletedTasksByDeveloper: developerCount ? completedTasks / developerCount : 0,
+      averageRealHoursByDeveloper: developerCount ? realHours / developerCount : 0,
+      medianCompletedTasksByDeveloper: calcularMediana(
+        developerValues.map((metric) => metric.completedTasks),
       ),
-      realHours: sprintDeveloperMetrics.reduce(
-        (total, metric) => total + metric.realHours,
-        0,
+      medianRealHoursByDeveloper: calcularMediana(
+        developerValues.map((metric) => metric.realHours),
       ),
       developers: developerSprintData.series.length,
       sprints: developerSprintData.completedBySprint.length,
@@ -573,6 +612,25 @@ export default function DashboardPage() {
               />
               <KpiCard label="Developers" value={formatearNumero(realKpiSummary.developers)} />
               <KpiCard label="Sprints" value={formatearNumero(realKpiSummary.sprints)} />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <KpiCard
+                label="Promedio tareas completadas por desarrollador"
+                value={formatearNumero(realKpiSummary.averageCompletedTasksByDeveloper, 1)}
+              />
+              <KpiCard
+                label="Promedio horas reales por desarrollador"
+                value={`${formatearNumero(realKpiSummary.averageRealHoursByDeveloper, 1)} h`}
+              />
+              <KpiCard
+                label="Mediana tareas completadas por desarrollador"
+                value={formatearNumero(realKpiSummary.medianCompletedTasksByDeveloper, 1)}
+              />
+              <KpiCard
+                label="Mediana horas reales por desarrollador"
+                value={`${formatearNumero(realKpiSummary.medianRealHoursByDeveloper, 1)} h`}
+              />
             </div>
 
             {metricsError && (

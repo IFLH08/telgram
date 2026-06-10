@@ -1023,10 +1023,14 @@ export async function actualizarPortalTaskStatus(
   estatus: PortalTask['estatus'],
   horasReales?: number,
 ): Promise<PortalTask> {
-  return actualizarPortalTask(taskId, {
-    estatus,
-    ...(horasReales === undefined ? {} : { horasReales }),
-  })
+  return actualizarPortalTask(
+    taskId,
+    {
+      estatus,
+      ...(horasReales === undefined ? {} : { horasReales }),
+    },
+    estatus === 'completada' ? { fechaFinReal: formatoFechaHora(new Date()) } : undefined,
+  )
 }
 
 async function actualizarPortalTaskStatusMock(
