@@ -104,6 +104,12 @@ public class TareaController {
                 tarea.setSprint(tareaInfo.getSprint());
                 tarea.setUsuarioAsignado(tareaInfo.getUsuarioAsignado());
                 tarea.setPrioridad(tareaInfo.getPrioridad());
+                if (tareaInfo.getFechaInicioReal() != null) {
+                    tarea.setFechaInicioReal(tareaInfo.getFechaInicioReal());
+                }
+                if (tareaInfo.getFechaFinReal() != null) {
+                    tarea.setFechaFinReal(tareaInfo.getFechaFinReal());
+                }
                 resolveRelations(tarea);
                 validateRequiredRelations(tarea);
                 Tarea saved = tareaRepository.save(tarea);
@@ -184,9 +190,7 @@ public class TareaController {
         if (tarea.getPrioridad() == null) {
             throw new IllegalArgumentException("La tarea necesita una prioridad valida.");
         }
-        if (isCompleted(tarea) && (tarea.getHorasReales() == null || tarea.getHorasReales() <= 0)) {
-            throw new IllegalArgumentException("Para completar la tarea debes registrar horas reales mayores a cero.");
-        }
+        // horasReales al completar es opcional; el portal las registra por separado via time tracking
     }
 
     private boolean isCompleted(Tarea tarea) {

@@ -546,6 +546,8 @@ type ApiTarea = {
   prioridad?: ApiPrioridad
   eliminada?: boolean
   fechaEliminacion?: string
+  fechaInicioReal?: string
+  fechaFinReal?: string
 }
 
 type ApiDashboardMetric = {
@@ -711,6 +713,8 @@ function mapTareaApi(tarea: ApiTarea): PortalTask {
     eliminada: tarea.eliminada ?? false,
     fechaEliminacion: tarea.fechaEliminacion,
     horasReales: tarea.horasReales ?? 0,
+    fechaInicioReal: tarea.fechaInicioReal,
+    fechaFinReal: tarea.fechaFinReal,
     sesionesTrabajo: [],
     actualizadoEn: tarea.fechaCreacion ?? new Date().toISOString(),
   }
@@ -887,6 +891,7 @@ async function crearPortalTaskMock(
 export async function actualizarPortalTask(
   taskId: string,
   cambios: Partial<PortalTaskInput>,
+  timestampExtras?: { fechaInicioReal?: string; fechaFinReal?: string },
 ): Promise<PortalTask> {
   const snapshot = await obtenerPortalSnapshot()
   const actual = snapshot.tasks.find((task) => task.id === taskId)
@@ -895,18 +900,26 @@ export async function actualizarPortalTask(
     throw new Error('La tarea no existe.')
   }
 
-  const payload = payloadTareaApi({
-    nombre: cambios.nombre ?? actual.nombre,
-    descripcion: cambios.descripcion ?? actual.descripcion,
-    fechaEntrega: cambios.fechaEntrega ?? actual.fechaEntrega,
-    horasEstimadas: cambios.horasEstimadas ?? actual.horasEstimadas,
-    horasReales: cambios.horasReales ?? actual.horasReales,
-    puntosHistoria: cambios.puntosHistoria ?? actual.puntosHistoria,
-    estatus: cambios.estatus ?? actual.estatus,
-    prioridad: cambios.prioridad ?? actual.prioridad,
-    sprintId: cambios.sprintId ?? actual.sprintId,
-    personaAsignadaId: cambios.personaAsignadaId ?? actual.personaAsignadaId,
-  })
+  const payload: Partial<ApiTarea> = {
+    ...payloadTareaApi({
+      nombre: cambios.nombre ?? actual.nombre,
+      descripcion: cambios.descripcion ?? actual.descripcion,
+      fechaEntrega: cambios.fechaEntrega ?? actual.fechaEntrega,
+      horasEstimadas: cambios.horasEstimadas ?? actual.horasEstimadas,
+      horasReales: cambios.horasReales ?? actual.horasReales,
+      puntosHistoria: cambios.puntosHistoria ?? actual.puntosHistoria,
+      estatus: cambios.estatus ?? actual.estatus,
+      prioridad: cambios.prioridad ?? actual.prioridad,
+      sprintId: cambios.sprintId ?? actual.sprintId,
+      personaAsignadaId: cambios.personaAsignadaId ?? actual.personaAsignadaId,
+    }),
+    ...(timestampExtras?.fechaInicioReal !== undefined
+      ? { fechaInicioReal: timestampExtras.fechaInicioReal }
+      : {}),
+    ...(timestampExtras?.fechaFinReal !== undefined
+      ? { fechaFinReal: timestampExtras.fechaFinReal }
+      : {}),
+  }
 
   const tarea = await fetchJson<ApiTarea>(`/api/tareas/${taskId}`, {
     method: 'PUT',
@@ -1047,10 +1060,10 @@ export async function iniciarPortalTaskSession(
   taskId: string,
   userId: string,
 ): Promise<PortalTask> {
-  const actual = tasksDb.find((task) => task.id === taskId)
-  const usuario = obtenerUsuarioPorId(userId)
+  const snapshot = await obtenerPortalSnapshot()
+  const actual = snapshot.tasks.find((task) => task.id === taskId)
 
-  if (!actual || !usuario) {
+  if (!actual) {
     throw new Error('No se pudo iniciar la sesion de trabajo.')
   }
 
@@ -1062,35 +1075,25 @@ export async function iniciarPortalTaskSession(
     throw new Error('La tarea debe estar activa para iniciar una sesion de trabajo.')
   }
 
-  if (obtenerSesionActiva(actual)) {
+  if (actual.fechaInicioReal) {
     throw new Error('Ya existe una sesion de trabajo activa para esta tarea.')
   }
 
   const ahoraActual = formatoFechaHora(new Date())
-  const actualizada = sincronizarTimeTracking({
-    ...actual,
-    estatus: 'en_progreso',
-    sesionesTrabajo: [
-      ...actual.sesionesTrabajo,
-      crearSesionTrabajo({
-        iniciadaEn: ahoraActual,
-        iniciadaPorUsuarioId: userId,
-        iniciadaPorNombre: usuario.nombreCompleto,
-      }),
-    ],
-    actualizadoEn: ahoraActual,
-  })
 
-  tasksDb = tasksDb.map((task) => (task.id === taskId ? actualizada : task))
-  registrarCambioEstado(actualizada, actual.estatus)
-  return Promise.resolve(clonar(actualizada))
+  return actualizarPortalTask(
+    taskId,
+    { estatus: 'en_progreso' },
+    { fechaInicioReal: ahoraActual },
+  )
 }
 
 export async function detenerPortalTaskSession(
   taskId: string,
   userId: string,
 ): Promise<PortalTask> {
-  const actual = tasksDb.find((task) => task.id === taskId)
+  const snapshot = await obtenerPortalSnapshot()
+  const actual = snapshot.tasks.find((task) => task.id === taskId)
 
   if (!actual) {
     throw new Error('La tarea no existe.')
@@ -1100,19 +1103,21 @@ export async function detenerPortalTaskSession(
     throw new Error('Solo la persona asignada puede detener sesiones de trabajo.')
   }
 
-  if (!obtenerSesionActiva(actual)) {
+  if (!actual.fechaInicioReal) {
     throw new Error('No hay una sesion activa para detener.')
   }
 
   const ahoraActual = formatoFechaHora(new Date())
-  const actualizada = sincronizarTimeTracking({
-    ...actual,
-    sesionesTrabajo: cerrarSesionActiva(actual, ahoraActual, userId),
-    actualizadoEn: ahoraActual,
-  })
+  const segundosTrabajados = calcularDuracionSegundos(actual.fechaInicioReal, ahoraActual)
+  const horasAcumuladas = calcularHorasReales(
+    (actual.horasReales ?? 0) * 3600 + segundosTrabajados,
+  )
 
-  tasksDb = tasksDb.map((task) => (task.id === taskId ? actualizada : task))
-  return Promise.resolve(clonar(actualizada))
+  return actualizarPortalTask(
+    taskId,
+    { horasReales: horasAcumuladas },
+    { fechaFinReal: ahoraActual },
+  )
 }
 
 export async function eliminarPortalTask(taskId: string): Promise<void> {
