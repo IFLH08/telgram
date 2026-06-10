@@ -317,6 +317,19 @@ public class TareaController {
         return current.getMessage() == null ? "No se pudo guardar la tarea." : current.getMessage();
     }
 
+    @PostMapping("/{id}/reanudar")
+    public ResponseEntity<?> reanudar(@PathVariable Long id) {
+        return tareaRepository.findById(id).map(tarea -> {
+            try {
+                tarea.setFechaInicioReal(LocalDateTime.now());
+                tarea.setFechaFinReal(null);
+                return ResponseEntity.ok(toResponse(tareaRepository.save(tarea)));
+            } catch (RuntimeException error) {
+                return ResponseEntity.badRequest().body(Map.of("error", rootMessage(error)));
+            }
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         return tareaRepository.findById(id).map(tarea -> {

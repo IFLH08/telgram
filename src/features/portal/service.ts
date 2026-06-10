@@ -715,13 +715,13 @@ function mapTareaApi(tarea: ApiTarea): PortalTask {
     horasReales: tarea.horasReales ?? 0,
     fechaInicioReal: tarea.fechaInicioReal,
     fechaFinReal: tarea.fechaFinReal,
-    sesionesTrabajo: tarea.fechaInicioReal && !tarea.fechaFinReal
+    sesionesTrabajo: tarea.fechaInicioReal
       ? [
           {
             id: `sesion-api-${tarea.idTarea}`,
             iniciadaEn: tarea.fechaInicioReal,
-            finalizadaEn: undefined,
-            duracionSegundos: 0,
+            finalizadaEn: tarea.fechaFinReal,
+            duracionSegundos: Math.round((tarea.horasReales ?? 0) * 3600),
             iniciadaPorUsuarioId: personaId,
             iniciadaPorNombre: tarea.usuarioAsignado?.nombre ?? 'Sin asignar',
           },
@@ -1086,8 +1086,13 @@ export async function iniciarPortalTaskSession(
     throw new Error('La tarea debe estar activa para iniciar una sesion de trabajo.')
   }
 
-  if (actual.fechaInicioReal) {
+  if (actual.fechaInicioReal && !actual.fechaFinReal) {
     throw new Error('Ya existe una sesion de trabajo activa para esta tarea.')
+  }
+
+  // Si ya tuvo una sesion previa cerrada, usar endpoint reanudar para limpiar fechaFinReal
+  if (actual.fechaInicioReal && actual.fechaFinReal) {
+    return fetchJson<ApiTarea>(`/api/tareas/${taskId}/reanudar`, { method: 'POST' }).then(mapTareaApi)
   }
 
   const ahoraActual = formatoFechaHora(new Date())
