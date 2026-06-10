@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -166,6 +167,16 @@ public class ConversationalBotService {
             return;
         }
 
+        if (requestText.contains("-" + BotLabels.PAUSE_TASK.getLabel())) {
+            handleMarcarPausada(chatId, requestText);
+            return;
+        }
+
+        if (requestText.contains("-" + BotLabels.RESUME_TASK.getLabel())) {
+            handleMarcarReanudada(chatId, requestText);
+            return;
+        }
+
         if (requestText.contains("-TERMINAR")) {
             handleMarcarTerminada(chatId, requestText);
             return;
@@ -290,7 +301,7 @@ public class ConversationalBotService {
         String sprintName = task.getSprint() != null ? task.getSprint().getNombre() : "Sin sprint";
         String estado = task.getEstado() != null ? task.getEstado().getNombreEstado() : "Sin estado";
         String estimatedHours = formatNumber(task.getHorasEstimadas());
-        String realHours = task.getHorasReales() != null ? formatNumber(task.getHorasReales()) : "pendiente";
+        String realHours = formatNumber(calculateTrackedHours(task, LocalDateTime.now()));
         return "- #" + task.getIdTarea() + " [" + sprintName + "] " + task.getNombre()
                 + " | " + estado + " | est: " + estimatedHours + "h | reales: " + realHours + "h";
     }
@@ -425,6 +436,15 @@ public class ConversationalBotService {
         return "EN PROGRESO".equals(value) || "EN_PROGRESO".equals(value) || "IN PROGRESS".equals(value);
     }
 
+    private boolean isPausedStatus(String status) {
+        if (status == null) {
+            return false;
+        }
+
+        String value = status.trim().toUpperCase(Locale.ROOT);
+        return "PAUSADA".equals(value) || "PAUSADO".equals(value) || "PAUSED".equals(value);
+    }
+
     private boolean isCompletedStatus(String status) {
         if (status == null) {
             return false;
@@ -464,6 +484,34 @@ public class ConversationalBotService {
             return String.valueOf(value.longValue());
         }
         return String.format(Locale.US, "%.1f", value);
+    }
+
+    private EstadoTarea resolveEstado(String... names) {
+        for (String name : names) {
+            EstadoTarea estado = estadoTareaRepository.findByNombreEstado(name);
+            if (estado != null) {
+                return estado;
+            }
+        }
+        return null;
+    }
+
+    private Double calculateTrackedHours(Tarea task, LocalDateTime now) {
+        double accumulatedHours = task.getHorasReales() == null ? 0.0 : task.getHorasReales();
+        if (!isInProgressStatus(task.getEstado() == null ? null : task.getEstado().getNombreEstado())) {
+            return accumulatedHours;
+        }
+        if (task.getFechaInicioReal() == null) {
+            return accumulatedHours;
+        }
+
+        Duration duration = Duration.between(task.getFechaInicioReal(), now);
+        if (duration.isNegative()) {
+            return accumulatedHours;
+        }
+
+        double additionalHours = duration.toMinutes() / 60.0;
+        return accumulatedHours + additionalHours;
     }
 
     private void sendLongMessage(Long chatId, String text) {
@@ -551,6 +599,10 @@ public class ConversationalBotService {
                 if (isPendingStatus(item.getEstado().getNombreEstado())) {
                     currentRow.add(item.getIdTarea() + "-INICIAR");
                 } else if (isInProgressStatus(item.getEstado().getNombreEstado())) {
+                    currentRow.add(item.getIdTarea() + "-" + BotLabels.PAUSE_TASK.getLabel());
+                    currentRow.add(item.getIdTarea() + "-TERMINAR");
+                } else if (isPausedStatus(item.getEstado().getNombreEstado())) {
+                    currentRow.add(item.getIdTarea() + "-" + BotLabels.RESUME_TASK.getLabel());
                     currentRow.add(item.getIdTarea() + "-TERMINAR");
                 }
                 keyboard.add(currentRow);
@@ -586,12 +638,101 @@ public class ConversationalBotService {
                 throw new IllegalStateException("No existe el estado En progreso en la base de datos.");
             }
             t.setEstado(estado);
+            if (t.getHorasReales() == null) {
+                t.setHorasReales(0.0);
+            }
+            if (t.getFechaInicioReal() == null) {
+                t.setFechaInicioReal(LocalDateTime.now());
+            }
+            t.setFechaFinReal(null);
             tareaRepository.save(t);
-            BotHelper.sendMessageToTelegram(chatId, "🚀 Tarea " + id + " marcada como INICIADA.", telegramClient, null);
+            BotHelper.sendMessageToTelegram(chatId,
+                    "Tarea " + id + " marcada como INICIADA. El tiempo comenzo a contarse.",
+                    telegramClient, null);
             handleListAllTareas(chatId);
         } catch (Exception e) {
             e.printStackTrace();
             BotHelper.sendMessageToTelegram(chatId, "❌ Error al iniciar tarea: " + e.getMessage(), telegramClient,
+                    null);
+        }
+    }
+
+    private void handleMarcarPausada(Long chatId, String requestText) {
+        try {
+            Long id = Long.parseLong(requestText.split("-")[0]);
+            Tarea t = tareaRepository.findById(id).orElse(null);
+            if (t == null) {
+                BotHelper.sendMessageToTelegram(chatId, "No se encontro la tarea con ID " + id + ".", telegramClient,
+                        null);
+                return;
+            }
+            if (t.getEstado() == null || !isInProgressStatus(t.getEstado().getNombreEstado())) {
+                BotHelper.sendMessageToTelegram(chatId,
+                        "La tarea " + id + " no esta en progreso, asi que no se puede pausar.",
+                        telegramClient, null);
+                return;
+            }
+
+            EstadoTarea estado = resolveEstado("Pausada", "PAUSED", "Pausado");
+            if (estado == null) {
+                throw new IllegalStateException("No existe el estado Pausada en la base de datos.");
+            }
+
+            LocalDateTime now = LocalDateTime.now();
+            Double trackedHours = calculateTrackedHours(t, now);
+            t.setEstado(estado);
+            t.setHorasReales(trackedHours);
+            t.setFechaInicioReal(null);
+            t.setFechaFinReal(now);
+            tareaRepository.save(t);
+
+            BotHelper.sendMessageToTelegram(chatId,
+                    "Tarea " + id + " pausada. Horas acumuladas: " + formatNumber(trackedHours) + ".",
+                    telegramClient, null);
+            handleListAllTareas(chatId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            BotHelper.sendMessageToTelegram(chatId, "Error al pausar tarea: " + e.getMessage(), telegramClient,
+                    null);
+        }
+    }
+
+    private void handleMarcarReanudada(Long chatId, String requestText) {
+        try {
+            Long id = Long.parseLong(requestText.split("-")[0]);
+            Tarea t = tareaRepository.findById(id).orElse(null);
+            if (t == null) {
+                BotHelper.sendMessageToTelegram(chatId, "No se encontro la tarea con ID " + id + ".", telegramClient,
+                        null);
+                return;
+            }
+            if (t.getEstado() == null || !isPausedStatus(t.getEstado().getNombreEstado())) {
+                BotHelper.sendMessageToTelegram(chatId,
+                        "La tarea " + id + " no esta pausada, asi que no se puede reanudar.",
+                        telegramClient, null);
+                return;
+            }
+
+            EstadoTarea estado = resolveEstado("En progreso", "IN PROGRESS", "EN_PROGRESO");
+            if (estado == null) {
+                throw new IllegalStateException("No existe el estado En progreso en la base de datos.");
+            }
+
+            t.setEstado(estado);
+            if (t.getHorasReales() == null) {
+                t.setHorasReales(0.0);
+            }
+            t.setFechaInicioReal(LocalDateTime.now());
+            t.setFechaFinReal(null);
+            tareaRepository.save(t);
+
+            BotHelper.sendMessageToTelegram(chatId,
+                    "Tarea " + id + " reanudada. El tiempo volvio a contarse.",
+                    telegramClient, null);
+            handleListAllTareas(chatId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            BotHelper.sendMessageToTelegram(chatId, "Error al reanudar tarea: " + e.getMessage(), telegramClient,
                     null);
         }
     }
@@ -605,12 +746,33 @@ public class ConversationalBotService {
                         null);
                 return;
             }
-            SessionManager.UserSession session = sessionManager.getSession(chatId);
-            session.setState(SessionManager.State.WAITING_FOR_REAL_HOURS);
-            session.setPendingTaskId(id);
+            EstadoTarea estado = resolveEstado("Completada", "COMPLETED", "DONE");
+            if (estado == null) {
+                throw new IllegalStateException("No existe el estado Completada en la base de datos.");
+            }
+
+            LocalDateTime now = LocalDateTime.now();
+            Double trackedHours = calculateTrackedHours(t, now);
+            LocalDateTime firstStart = t.getFechaInicioReal();
+            if (firstStart == null) {
+                firstStart = t.getFechaFinReal();
+            }
+            if (firstStart == null) {
+                firstStart = now;
+            }
+
+            t.setEstado(estado);
+            t.setHorasReales(trackedHours);
+            t.setFechaInicioReal(firstStart);
+            t.setFechaFinReal(now);
+            tareaRepository.save(t);
+
             BotHelper.sendMessageToTelegram(chatId,
-                    "Ingresa las horas reales trabajadas para cerrar la tarea " + id + ". Ejemplo: 2.5",
+                    "Tarea " + id + " marcada como TERMINADA con " + formatNumber(trackedHours)
+                            + " horas reales acumuladas.",
                     telegramClient, null);
+            sessionManager.clearSession(chatId);
+            handleListAllTareas(chatId);
         } catch (Exception e) {
             e.printStackTrace();
             BotHelper.sendMessageToTelegram(chatId, "❌ Error al terminar tarea: " + e.getMessage(), telegramClient,
@@ -623,7 +785,23 @@ public class ConversationalBotService {
                 "🧠 Procesando petición resumida y evaluando límites de tiempo (máx 4h según buenas prácticas)...",
                 telegramClient, null);
 
-        String prompt = "Resume esta tarea en formato JSON. Genera nombre, descripcion, horasEstimadas y idPrioridad (1 baja, 2 media, 3 alta). IMPORTANTE: La regla de Oracle indica que ninguna tarea debe tener un estimado mayor a 4 horas. Si el requerimiento excede las 4 horas, debes subdividir lógicamente la tarea en múltiples subtareas (cada una de máximo 4 horas). Debes devolver el resultado ESTRICTAMENTE como un ARREGLO JSON (incluso si es una sola tarea): [{\"nombre\": \"...\", \"descripcion\": \"...\", \"horasEstimadas\": X, \"idPrioridad\": Y}]. Responde puro JSON:\n"
+        String retrievedContext = "";
+        try {
+            var similarDocs = deepSeekService.findRelevantToDoDescriptions(requestText, 3);
+            if (!similarDocs.isEmpty()) {
+                StringBuilder contextBuilder = new StringBuilder();
+                contextBuilder.append("Contexto relevante recuperado de tareas existentes en Oracle:\n");
+                for (int i = 0; i < similarDocs.size(); i++) {
+                    contextBuilder.append("- ").append(similarDocs.get(i)).append("\n");
+                }
+                retrievedContext = contextBuilder.toString() + "\n";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        String prompt = retrievedContext +
+                "Resume esta tarea en formato JSON. Genera nombre, descripcion, horasEstimadas y idPrioridad (1 baja, 2 media, 3 alta). IMPORTANTE: La regla de Oracle indica que ninguna tarea debe tener un estimado mayor a 4 horas. Si el requerimiento excede las 4 horas, debes subdividir lógicamente la tarea en múltiples subtareas (cada una de máximo 4 horas). Debes devolver el resultado ESTRICTAMENTE como un ARREGLO JSON (incluso si es una sola tarea): [{\"nombre\": \"...\", \"descripcion\": \"...\", \"horasEstimadas\": X, \"idPrioridad\": Y}]. Responde puro JSON:\n"
                 + requestText;
         String llmRawResponse = "";
 
