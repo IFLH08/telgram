@@ -7,17 +7,38 @@ import type { Usuario } from '../types'
 import type { AuthContextValue } from './auth.types'
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
+const AUTH_STORAGE_KEY = 'devtracker.usuarioActual'
 
 interface AuthProviderProps {
   children: ReactNode
 }
 
+function obtenerUsuarioGuardado() {
+  try {
+    const rawValue = window.localStorage.getItem(AUTH_STORAGE_KEY)
+
+    return rawValue ? (JSON.parse(rawValue) as Usuario) : null
+  } catch {
+    return null
+  }
+}
+
+function guardarUsuario(usuario: Usuario) {
+  window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(usuario))
+}
+
+function limpiarUsuarioGuardado() {
+  window.localStorage.removeItem(AUTH_STORAGE_KEY)
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [usuarioActual, setUsuarioActual] = useState<Usuario | null>(null)
+  const [usuarioActual, setUsuarioActual] = useState<Usuario | null>(() => obtenerUsuarioGuardado())
 
   const cambiarUsuarioActualDemo = useCallback(async (usuarioId: string) => {
     try {
-      setUsuarioActual(await cambiarUsuarioActualDemoService(usuarioId))
+      const usuario = await cambiarUsuarioActualDemoService(usuarioId)
+      guardarUsuario(usuario)
+      setUsuarioActual(usuario)
     } catch (error) {
       console.error('No se pudo cambiar el usuario demo', error)
     }
@@ -25,8 +46,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const iniciarSesion = useCallback(async (nombre: string, contrasena: string) => {
     const usuario = await iniciarSesionService(nombre, contrasena)
+    guardarUsuario(usuario)
     setUsuarioActual(usuario)
     return usuario
+  }, [])
+
+  const cerrarSesion = useCallback(() => {
+    limpiarUsuarioGuardado()
+    setUsuarioActual(null)
   }, [])
 
   const value = useMemo<AuthContextValue>(
@@ -34,8 +61,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       usuarioActual,
       iniciarSesion,
       cambiarUsuarioActualDemo,
+      cerrarSesion,
     }),
-    [usuarioActual, iniciarSesion, cambiarUsuarioActualDemo],
+    [usuarioActual, iniciarSesion, cambiarUsuarioActualDemo, cerrarSesion],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
