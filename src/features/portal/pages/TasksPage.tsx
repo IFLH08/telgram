@@ -414,6 +414,8 @@ export default function TasksPage() {
     memberships,
     projects,
     sprints,
+    startTaskSession,
+    stopTaskSession,
     tasks,
     updateTask,
     updateTaskStatus,
@@ -442,6 +444,7 @@ export default function TasksPage() {
   const [aiModalOpen, setAiModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<PortalTask | null>(null)
   const [previewTaskId, setPreviewTaskId] = useState<string | null>(null)
+  const [sessionBusy, setSessionBusy] = useState(false)
   const [completionTask, setCompletionTask] = useState<PortalTask | null>(null)
   const [completionHours, setCompletionHours] = useState('')
   const [completionError, setCompletionError] = useState<string | null>(null)
@@ -871,6 +874,50 @@ export default function TasksPage() {
     setPreviewTaskId(task.id)
   }
 
+  const handleStartTaskSession = async () => {
+    if (!previewTask || !usuarioActual?.id) {
+      return
+    }
+
+    setSessionBusy(true)
+    setError(null)
+
+    try {
+      await startTaskSession(previewTask.id, usuarioActual.id)
+      setMessage('Sesion de trabajo iniciada.')
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'No se pudo iniciar la sesion de trabajo.',
+      )
+    } finally {
+      setSessionBusy(false)
+    }
+  }
+
+  const handleStopTaskSession = async () => {
+    if (!previewTask || !usuarioActual?.id) {
+      return
+    }
+
+    setSessionBusy(true)
+    setError(null)
+
+    try {
+      await stopTaskSession(previewTask.id, usuarioActual.id)
+      setMessage('Sesion de trabajo detenida.')
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'No se pudo detener la sesion de trabajo.',
+      )
+    } finally {
+      setSessionBusy(false)
+    }
+  }
+
   return (
     <section className={PAGE_CONTAINER}>
       <div className="space-y-6">
@@ -1240,13 +1287,16 @@ export default function TasksPage() {
         <TaskPreviewModal
           open={Boolean(previewTask)}
           task={previewTask}
+          sessionBusy={sessionBusy}
           canEditStatus={previewTask ? canDeveloperEditTaskStatus(previewTask) : false}
           onClose={() => setPreviewTaskId(null)}
+          onStartSession={handleStartTaskSession}
           onStatusChange={(status) => {
             if (previewTask) {
               void handleStatusChange(previewTask, status)
             }
           }}
+          onStopSession={handleStopTaskSession}
         />
       )}
 

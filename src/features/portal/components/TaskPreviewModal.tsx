@@ -19,17 +19,23 @@ import type { EstadoTareaPortal } from '../types'
 interface TaskPreviewModalProps {
   open: boolean
   task: PortalTask | null
+  sessionBusy: boolean
   canEditStatus?: boolean
   onClose: () => void
+  onStartSession: () => void
   onStatusChange?: (status: EstadoTareaPortal) => void
+  onStopSession: () => void
 }
 
 export default function TaskPreviewModal({
   open,
   task,
+  sessionBusy,
   canEditStatus = false,
   onClose,
+  onStartSession,
   onStatusChange,
+  onStopSession,
 }: TaskPreviewModalProps) {
   const [now, setNow] = useState(() => new Date())
 
@@ -99,6 +105,12 @@ export default function TaskPreviewModal({
   if (!open || !task) {
     return null
   }
+
+  const canStartSession =
+    !sessionBusy &&
+    !activeSession &&
+    task.estatus !== 'completada' &&
+    task.estatus !== 'cancelada'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
@@ -198,12 +210,22 @@ export default function TaskPreviewModal({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[12px] uppercase tracking-[0.08em] text-[#8B857E]">
-                  Registro de horas
+                  Tracking profesional
                 </p>
                 <p className="mt-2 text-[15px] leading-6 text-[#4D4A45]">
-                  Las horas reales se registran al completar la tarea.
+                  El tiempo real se suma solo cuando una sesion de trabajo se cierra.
                 </p>
               </div>
+
+              {activeSession ? (
+                <Boton variante="peligro" onClick={onStopSession} disabled={sessionBusy}>
+                  {sessionBusy ? 'Deteniendo...' : 'Detener sesion'}
+                </Boton>
+              ) : (
+                <Boton onClick={onStartSession} disabled={!canStartSession}>
+                  {sessionBusy ? 'Iniciando...' : 'Iniciar sesion'}
+                </Boton>
+              )}
             </div>
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
