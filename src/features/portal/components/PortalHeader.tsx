@@ -10,6 +10,7 @@ import { BotonIcono } from '../../../components/Button'
 import {
   IconoCampana,
   IconoProyectos,
+  IconoSalir,
   IconoTareas,
 } from '../../../components/Icons'
 import { AVATAR, SELECT, TOKENS, TYPO, cx } from '../../../constants/colors'
@@ -59,7 +60,7 @@ export default function PortalHeader({
   notifications,
   onNavigate,
 }: PortalHeaderProps) {
-  const { usuarioActual, cambiarUsuarioActualDemo } = useAuth()
+  const { usuarioActual, cambiarUsuarioActualDemo, cerrarSesion } = useAuth()
   const { users } = usePortal()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const notificationsRef = useRef<HTMLDivElement | null>(null)
@@ -142,6 +143,14 @@ export default function PortalHeader({
                       {formatRole(usuarioActual?.rol)}
                     </p>
                   </div>
+
+                  <BotonIcono
+                    icono={<IconoSalir className="h-5 w-5" />}
+                    label="Cerrar sesion"
+                    variante="secundario"
+                    onClick={cerrarSesion}
+                    className="h-10 w-10 shrink-0 border-[#D8E3DA] bg-white text-[#33553C] hover:border-[#BCD0C1] hover:bg-[#FBFAF8]"
+                  />
                 </div>
 
                 <div className="flex items-end gap-3">

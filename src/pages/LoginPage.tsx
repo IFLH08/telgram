@@ -43,7 +43,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             <CardHeader>
               <CardTitle>Iniciar sesion</CardTitle>
               <p className={TYPO.BODY_MUTED}>
-                Usa las credenciales registradas en MtdrSpring.
+                Usa tus credenciales de desarrollador. 
               </p>
             </CardHeader>
 
