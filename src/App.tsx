@@ -8,6 +8,7 @@ import ProjectsPage from './features/portal/pages/ProjectsPage'
 import AccessCodesPage from './features/portal/pages/AccessCodesPage'
 import DashboardPage from './features/portal/pages/DashboardPage'
 import { useAuth } from './auth'
+import LoginPage from './auth/LoginPage'
 import { obtenerNotificacionesUsuario } from './features/portal/selectors'
 import { ALERT, LAYOUT, cx } from './constants/colors'
 
@@ -59,17 +60,32 @@ function AppContenido() {
   )
 }
 
-export default function App() {
-  if (window.location.pathname === '/dashboard' || window.location.pathname === '/dashboard/') {
-    return <DashboardPage />
+function AppAutenticada() {
+  const { usuarioActual, cargando } = useAuth()
+
+  if (cargando) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white text-[#161513]">
+        Cargando usuarios reales...
+      </div>
+    )
   }
 
+  if (!usuarioActual) {
+    return <LoginPage />
+  }
 
   return (
+    <PortalProvider>
+      <AppContenido />
+    </PortalProvider>
+  )
+}
+
+export default function App() {
+  return (
     <AuthProvider>
-      <PortalProvider>
-        <AppContenido />
-      </PortalProvider>
+      <AppAutenticada />
     </AuthProvider>
   )
 }

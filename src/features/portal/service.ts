@@ -818,9 +818,16 @@ export async function obtenerDashboardMetrics(): Promise<PortalDashboardMetric[]
   return Array.isArray(metrics) ? metrics.map(mapDashboardMetricApi) : []
 }
 
-export async function obtenerSprintDeveloperMetrics(): Promise<PortalSprintDeveloperMetric[]> {
+export async function obtenerSprintDeveloperMetrics(
+  sprintId?: string,
+  developerId?: string,
+): Promise<PortalSprintDeveloperMetric[]> {
+  const params = new URLSearchParams()
+  if (sprintId) params.set('sprintId', sprintId)
+  if (developerId) params.set('developerId', developerId)
+  const query = params.toString() ? `?${params.toString()}` : ''
   const metrics = await fetchJson<ApiSprintDeveloperMetric[]>(
-    '/api/dashboard/sprint-developer-metrics',
+    `/api/dashboard/sprint-developer-metrics${query}`,
   )
 
   return Array.isArray(metrics) ? metrics.map(mapSprintDeveloperMetricApi) : []
@@ -1037,7 +1044,14 @@ async function actualizarPortalTaskStatusMock(
     )
   }
 
-  const sincronizada = sincronizarTimeTracking(actualizada)
+  const sincronizadaBase = sincronizarTimeTracking(actualizada)
+  const sincronizada =
+    horasReales === undefined
+      ? sincronizadaBase
+      : {
+          ...sincronizadaBase,
+          horasReales,
+        }
   tasksDb = tasksDb.map((task) => (task.id === taskId ? sincronizada : task))
   registrarCambioEstado(sincronizada, actual.estatus)
   return Promise.resolve(clonar(sincronizada))

@@ -32,27 +32,39 @@ import type { DashboardPeriod } from '../types'
 function DashboardFilters({
   currentPeriod,
   currentProjectId,
+  currentSprintId,
+  currentDeveloperId,
   onChangePeriod,
   onChangeProject,
+  onChangeSprint,
+  onChangeDeveloper,
   projectOptions,
+  sprintOptions,
+  developerOptions,
 }: {
   currentPeriod: DashboardPeriod
   currentProjectId: string
+  currentSprintId: string
+  currentDeveloperId: string
   onChangePeriod: (value: DashboardPeriod) => void
   onChangeProject: (value: string) => void
+  onChangeSprint: (value: string) => void
+  onChangeDeveloper: (value: string) => void
   projectOptions: Array<{ id: string; nombre: string }>
+  sprintOptions: Array<{ id: string; nombre: string }>
+  developerOptions: Array<{ id: string; nombre: string }>
 }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Filtros de seguimiento</CardTitle>
+        <CardTitle>Filtros de KPIs</CardTitle>
         <CardDescription>
           Ajusta el alcance de las tareas operativas del dashboard.
         </CardDescription>
       </CardHeader>
 
       <CardContent>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div>
             <label htmlFor="dashboard-project-filter" className={TYPO.LABEL}>Proyecto</label>
             <select
@@ -82,6 +94,40 @@ function DashboardFilters({
               <option value="15d">Ultimos 15 dias</option>
               <option value="30d">Ultimos 30 dias</option>
               <option value="sprint">Sprint actual</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="dashboard-sprint-filter" className={TYPO.LABEL}>Sprint</label>
+            <select
+              id="dashboard-sprint-filter"
+              value={currentSprintId}
+              onChange={(event) => onChangeSprint(event.target.value)}
+              className={cx(SELECT.BASE, SELECT.DEFAULT, 'mt-2')}
+            >
+              <option value="todos">Todos los sprints</option>
+              {sprintOptions.map((sprint) => (
+                <option key={sprint.id} value={sprint.id}>
+                  {sprint.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="dashboard-developer-filter" className={TYPO.LABEL}>Developer</label>
+            <select
+              id="dashboard-developer-filter"
+              value={currentDeveloperId}
+              onChange={(event) => onChangeDeveloper(event.target.value)}
+              className={cx(SELECT.BASE, SELECT.DEFAULT, 'mt-2')}
+            >
+              <option value="todos">Todos los developers</option>
+              {developerOptions.map((developer) => (
+                <option key={developer.id} value={developer.id}>
+                  {developer.nombre}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -355,11 +401,13 @@ function DashboardMetricsList({ metrics }: { metrics: PortalDashboardMetric[] })
 
 export default function DashboardPage() {
   const { usuarioActual } = useAuth()
-  const { memberships, notifications, projects, tasks } = usePortal()
+  const { memberships, notifications, projects, sprints, tasks, users } = usePortal()
   const isAdmin = esAdminPortal(usuarioActual)
 
   const [projectIdFilter, setProjectIdFilter] = useState('todos')
   const [periodFilter, setPeriodFilter] = useState<DashboardPeriod>('sprint')
+  const [sprintIdFilter, setSprintIdFilter] = useState('todos')
+  const [developerIdFilter, setDeveloperIdFilter] = useState('todos')
   const [dashboardMetrics, setDashboardMetrics] = useState<PortalDashboardMetric[]>([])
   const [sprintDeveloperMetrics, setSprintDeveloperMetrics] = useState<
     PortalSprintDeveloperMetric[]
@@ -381,9 +429,12 @@ export default function DashboardPage() {
       setMetricsError(null)
 
       try {
+        const sprintParam = sprintIdFilter !== 'todos' ? sprintIdFilter : undefined
+        const developerParam = developerIdFilter !== 'todos' ? developerIdFilter : undefined
+
         const [metrics, developerMetrics] = await Promise.all([
           obtenerDashboardMetrics(),
-          obtenerSprintDeveloperMetrics(),
+          obtenerSprintDeveloperMetrics(sprintParam, developerParam),
         ])
 
         if (active) {
@@ -410,11 +461,29 @@ export default function DashboardPage() {
     return () => {
       active = false
     }
-  }, [isAdmin])
+  }, [developerIdFilter, isAdmin, sprintIdFilter, tasks])
 
   const visibleProjects = useMemo(() => {
     return obtenerProyectosVisibles(usuarioActual, projects, memberships, tasks)
   }, [usuarioActual, projects, memberships, tasks])
+
+  const sprintOptions = useMemo(() => {
+    const cutoff = new Date('2026-06-12T00:00:00')
+    return sprints
+      .filter((sprint) => new Date(`${sprint.fechaInicio}T00:00:00`) < cutoff)
+      .map((sprint) => ({
+        id: sprint.id,
+        nombre: `${sprint.proyectoNombre} - ${sprint.nombre}`,
+      }))
+      .sort((left, right) => left.nombre.localeCompare(right.nombre))
+  }, [sprints])
+
+  const developerOptions = useMemo(() => {
+    return users
+      .filter((user) => user.rol === 'developer')
+      .map((user) => ({ id: user.id, nombre: user.nombreCompleto }))
+      .sort((left, right) => left.nombre.localeCompare(right.nombre))
+  }, [users])
 
   const visibleTasks = useMemo(() => {
     return obtenerTareasVisibles(usuarioActual, tasks, memberships, projects)
@@ -480,9 +549,15 @@ export default function DashboardPage() {
           <DashboardFilters
             currentPeriod={periodFilter}
             currentProjectId={projectIdFilter}
+            currentSprintId={sprintIdFilter}
+            currentDeveloperId={developerIdFilter}
             onChangePeriod={setPeriodFilter}
             onChangeProject={setProjectIdFilter}
+            onChangeSprint={setSprintIdFilter}
+            onChangeDeveloper={setDeveloperIdFilter}
             projectOptions={visibleProjects}
+            sprintOptions={sprintOptions}
+            developerOptions={developerOptions}
           />
         )}
 

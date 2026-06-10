@@ -14,7 +14,31 @@ type ApiUsuario = {
   fechaRegistro?: string
 }
 
-let usuarioActualDemoId: string | null = null
+const DEMO_USER_STORAGE_KEY = 'devtracker.demo.userId'
+
+function leerUsuarioDemoId(): string | null {
+  try {
+    return window.localStorage.getItem(DEMO_USER_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function guardarUsuarioDemoId(usuarioId: string) {
+  try {
+    window.localStorage.setItem(DEMO_USER_STORAGE_KEY, usuarioId)
+  } catch {
+    // La sesion local es una ayuda de demo; si localStorage falla, seguimos en memoria.
+  }
+}
+
+function limpiarUsuarioDemoId() {
+  try {
+    window.localStorage.removeItem(DEMO_USER_STORAGE_KEY)
+  } catch {
+    // No bloquea el cierre de sesion demo.
+  }
+}
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -85,20 +109,14 @@ export const obtenerUsuarios = async (): Promise<Usuario[]> => {
   return usuarios.map(mapUsuarioApi)
 }
 
-export const obtenerUsuarioActual = async (): Promise<Usuario> => {
-  const usuarios = await obtenerUsuarios()
-  const usuarioSeleccionado = usuarios.find((usuario) => usuario.id === usuarioActualDemoId)
-  const usuarioInicial =
-    usuarioSeleccionado ??
-    usuarios.find((usuario) => usuario.rol === 'admin') ??
-    usuarios[0]
+export function obtenerUsuarioDemoSeleccionado(usuarios: Usuario[]): Usuario | null {
+  const usuarioDemoId = leerUsuarioDemoId()
 
-  if (!usuarioInicial) {
-    throw new Error('No hay usuarios reales disponibles en /api/usuarios.')
+  if (!usuarioDemoId) {
+    return null
   }
 
-  usuarioActualDemoId = usuarioInicial.id
-  return { ...usuarioInicial }
+  return usuarios.find((usuario) => usuario.id === usuarioDemoId) ?? null
 }
 
 // Demo-only: until real authentication exists, the selector switches the active user
@@ -108,9 +126,14 @@ export const cambiarUsuarioActualDemo = async (usuarioId: string): Promise<Usuar
   const usuarioEncontrado = usuarios.find((usuario) => usuario.id === usuarioId)
 
   if (!usuarioEncontrado) {
-    return obtenerUsuarioActual()
+    limpiarUsuarioDemoId()
+    throw new Error('El usuario demo seleccionado no existe en /api/usuarios.')
   }
 
-  usuarioActualDemoId = usuarioEncontrado.id
+  guardarUsuarioDemoId(usuarioEncontrado.id)
   return { ...usuarioEncontrado }
+}
+
+export const cerrarSesionDemo = async (): Promise<void> => {
+  limpiarUsuarioDemoId()
 }

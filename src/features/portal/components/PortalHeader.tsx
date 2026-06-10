@@ -6,7 +6,7 @@ import {
 } from 'react'
 import type { Pagina } from '../../../types'
 import { useAuth } from '../../../auth'
-import { BotonIcono } from '../../../components/Button'
+import { Boton, BotonIcono } from '../../../components/Button'
 import {
   IconoCampana,
   IconoProyectos,
@@ -59,7 +59,7 @@ export default function PortalHeader({
   notifications,
   onNavigate,
 }: PortalHeaderProps) {
-  const { usuarioActual, cambiarUsuarioActualDemo } = useAuth()
+  const { usuarioActual, cambiarUsuarioActualDemo, cerrarSesionDemo } = useAuth()
   const { users } = usePortal()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const notificationsRef = useRef<HTMLDivElement | null>(null)
@@ -210,6 +210,19 @@ export default function PortalHeader({
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div className="shrink-0">
+                    <span className="mb-1 block text-[12px] uppercase tracking-[0.08em] text-[#8B857E]">
+                      Sesion
+                    </span>
+                    <Boton
+                      variante="secundario"
+                      className="h-[56px]"
+                      onClick={() => void cerrarSesionDemo()}
+                    >
+                      Salir
+                    </Boton>
                   </div>
                 </div>
               </div>
