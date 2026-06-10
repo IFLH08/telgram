@@ -40,6 +40,22 @@ public class UsuarioController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credenciales) {
+        String nombre = credenciales.get("nombre");
+        String contrasena = credenciales.get("contrasena");
+
+        if (nombre == null || nombre.isBlank() || contrasena == null || contrasena.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Nombre y contrasena son obligatorios."));
+        }
+
+        return usuarioRepository.findByNombreIgnoreCase(nombre.trim())
+                .or(() -> usuarioRepository.findByUsernameIgnoreCase(nombre.trim()))
+                .filter(usuario -> contrasena.equals(usuario.getContrasena()))
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Credenciales invalidas.")));
+    }
+
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Usuario usuario) {
         try {

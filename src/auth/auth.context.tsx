@@ -1,5 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { cambiarUsuarioActualDemo as cambiarUsuarioActualDemoService, obtenerUsuarioActual } from '../services/auth.service'
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import {
+  cambiarUsuarioActualDemo as cambiarUsuarioActualDemoService,
+  iniciarSesion as iniciarSesionService,
+} from '../services/auth.service'
 import type { Usuario } from '../types'
 import type { AuthContextValue } from './auth.types'
 
@@ -12,15 +15,6 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [usuarioActual, setUsuarioActual] = useState<Usuario | null>(null)
 
-  const refrescarUsuarioActual = useCallback(async () => {
-    try {
-      setUsuarioActual(await obtenerUsuarioActual())
-    } catch (error) {
-      console.error('No se pudo obtener el usuario actual', error)
-      setUsuarioActual(null)
-    }
-  }, [])
-
   const cambiarUsuarioActualDemo = useCallback(async (usuarioId: string) => {
     try {
       setUsuarioActual(await cambiarUsuarioActualDemoService(usuarioId))
@@ -29,16 +23,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [])
 
-  useEffect(() => {
-    void refrescarUsuarioActual()
-  }, [refrescarUsuarioActual])
+  const iniciarSesion = useCallback(async (nombre: string, contrasena: string) => {
+    const usuario = await iniciarSesionService(nombre, contrasena)
+    setUsuarioActual(usuario)
+    return usuario
+  }, [])
 
   const value = useMemo<AuthContextValue>(
     () => ({
       usuarioActual,
+      iniciarSesion,
       cambiarUsuarioActualDemo,
     }),
-    [usuarioActual, cambiarUsuarioActualDemo],
+    [usuarioActual, iniciarSesion, cambiarUsuarioActualDemo],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

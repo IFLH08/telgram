@@ -3,6 +3,7 @@ package com.springboot.MyTodoList.model;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "USUARIOS", schema = "EQUIPO63")
@@ -20,6 +21,10 @@ public class Usuario {
 
     @Column(name = "USERNAME", length = 100, nullable = false)
     private String username;
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Column(name = "CONTRASENA", length = 100)
+    private String contrasena;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ID_ROL")
@@ -61,6 +66,14 @@ public class Usuario {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getContrasena() {
+        return contrasena;
+    }
+
+    public void setContrasena(String contrasena) {
+        this.contrasena = contrasena;
     }
 
     public Rol getRol() {

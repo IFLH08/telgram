@@ -11,6 +11,10 @@ import java.util.Optional;
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByTelegramId(Long telegramId);
 
+    Optional<Usuario> findByNombreIgnoreCase(String nombre);
+
+    Optional<Usuario> findByUsernameIgnoreCase(String username);
+
     @Query("SELECT COALESCE(MAX(u.idUsuario), 0) FROM Usuario u")
     Long findMaxIdUsuario();
 

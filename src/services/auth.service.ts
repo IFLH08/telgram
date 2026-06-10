@@ -85,6 +85,19 @@ export const obtenerUsuarios = async (): Promise<Usuario[]> => {
   return usuarios.map(mapUsuarioApi)
 }
 
+export const iniciarSesion = async (
+  nombre: string,
+  contrasena: string,
+): Promise<Usuario> => {
+  const usuario = await fetchJson<ApiUsuario>('/api/usuarios/login', {
+    method: 'POST',
+    body: JSON.stringify({ nombre, contrasena }),
+  })
+
+  usuarioActualDemoId = String(usuario.idUsuario)
+  return mapUsuarioApi(usuario)
+}
+
 export const obtenerUsuarioActual = async (): Promise<Usuario> => {
   const usuarios = await obtenerUsuarios()
   const usuarioSeleccionado = usuarios.find((usuario) => usuario.id === usuarioActualDemoId)

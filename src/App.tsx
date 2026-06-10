@@ -10,6 +10,7 @@ import DashboardPage from './features/portal/pages/DashboardPage'
 import { useAuth } from './auth'
 import { obtenerNotificacionesUsuario } from './features/portal/selectors'
 import { ALERT, LAYOUT, cx } from './constants/colors'
+import LoginPage from './pages/LoginPage'
 
 function AppContenido() {
   const [paginaActual, setPaginaActual] = useState<Pagina>('dashboard')
@@ -60,16 +61,25 @@ function AppContenido() {
 }
 
 export default function App() {
-  if (window.location.pathname === '/dashboard' || window.location.pathname === '/dashboard/') {
-    return <DashboardPage />
-  }
-
-
   return (
     <AuthProvider>
-      <PortalProvider>
-        <AppContenido />
-      </PortalProvider>
+      <AppAutenticada />
     </AuthProvider>
+  )
+}
+
+function AppAutenticada() {
+  const { usuarioActual, iniciarSesion } = useAuth()
+
+  if (!usuarioActual) {
+    return <LoginPage onLogin={iniciarSesion} />
+  }
+
+  return (
+    <PortalProvider>
+      <div className="transition-opacity duration-300 ease-out">
+        <AppContenido />
+      </div>
+    </PortalProvider>
   )
 }
